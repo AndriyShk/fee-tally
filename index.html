@@ -87,7 +87,7 @@
   .btn svg { width: 16px; height: 16px; }
 
   /* hero */
-  .hero { margin-top: 20px; padding: 28px; display: grid; grid-template-columns: minmax(0,1fr) 330px; gap: 24px; align-items: center; overflow: hidden; }
+  .hero { margin-top: 20px; padding: 28px; display: grid; grid-template-columns: minmax(0,1fr) 330px; gap: 24px; align-items: center; position: relative; z-index: 5; }
   .hero-main { display: grid; gap: 18px; min-width: 0; }
   .hero-art { align-self: stretch; display: grid; place-items: center; }
   .mascot { width: 330px; height: auto; aspect-ratio: 1; display: block; overflow: visible; } /* the rooster itself stays still: only his pencil hand and the receipt move */
@@ -111,9 +111,16 @@
   .field input { width: 100%; height: 46px; border-radius: 12px; border: 1px solid var(--line); background: var(--control); padding: 0 14px 0 34px; font-size: 15px; font-weight: 500; }
   .field input:focus { outline: none; border-color: var(--lav); background: var(--card); }
   .field .at { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--ink-3); font-weight: 600; pointer-events: none; }
-  .sugg { position: absolute; left: 0; right: 0; top: calc(100% + 6px); z-index: 10; padding: 6px; margin: 0; list-style: none; }
-  .sugg li { padding: 8px 10px; border-radius: 8px; cursor: pointer; font-weight: 500; }
-  .sugg li[aria-selected="true"], .sugg li:hover { background: var(--control); }
+  /* the suggestion list floats over everything below the form (as in XO Wrapper) */
+  .sugg { position: absolute; left: 0; right: 0; top: calc(100% + 6px); z-index: 30; margin: 0; padding: 6px; list-style: none; background: var(--card); border: 1px solid var(--line); border-radius: 14px; box-shadow: 0 18px 40px -12px rgba(0,0,0,.35); max-height: 340px; overflow-y: auto; }
+  .sugg li { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 10px; cursor: pointer; font-size: 15px; font-weight: 500; }
+  .sugg li.on, .sugg li[data-i]:hover { background: var(--control); }
+  .sugg li .nm { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .sugg li b { color: var(--pink-text); font-weight: 700; }
+  .sugg img, .sugg .ph { width: 26px; height: 26px; border-radius: 50%; flex: none; object-fit: cover; background: var(--control); }
+  .sugg .ph { display: grid; place-items: center; font-size: 12px; font-weight: 700; color: var(--ink-3); }
+  .sugg .vf { color: #5aa9ff; font-size: 13px; }
+  .sugg .empty { color: var(--ink-3); cursor: default; font-size: 14px; }
   .status { font-size: 13.5px; color: var(--ink-2); }
   .status:empty { display: none; }
   .status.err { color: var(--neg); }
@@ -273,7 +280,7 @@
       <div class="field">
         <span class="at">@</span>
         <input id="u" name="u" placeholder="XO username" aria-label="XO username" spellcheck="false" autocapitalize="off" role="combobox" aria-expanded="false" aria-controls="sugg" aria-autocomplete="list">
-        <ul class="sugg card" id="sugg" role="listbox" hidden></ul>
+        <ul class="sugg" id="sugg" role="listbox" hidden></ul>
       </div>
       <button class="btn" id="go" type="submit">Count my fees</button>
     </form>
@@ -407,43 +414,78 @@ $("theme").onclick = () => {
   try { localStorage.setItem(themeKey, next); } catch {}
 };
 
-/* username suggestions */
-let USERS = [];
-fetch("users.json").then((r) => r.json()).then((u) => { USERS = u; }).catch(() => {});
+/* username autocomplete, as in XO Wrapper: users.json rows are [username, avatar, verified] */
+let USERS = null, acItems = [], acOn = -1, acToken = 0;
 const input = $("u"), sugg = $("sugg");
-let sel = -1;
-function closeSugg() { sugg.hidden = true; input.setAttribute("aria-expanded", "false"); sel = -1; }
-function showSugg() {
+const loadUsers = () => (USERS ??= fetch("users.json").then((r) => r.json()).catch(() => []));
+const avatarUrl = (a) => (!a ? "" : a.startsWith("http") ? a : "https://pbs.twimg.com/profile_images/" + a);
+function closeSugg() {
+  acToken++;
+  sugg.hidden = true; acItems = []; acOn = -1;
+  input.setAttribute("aria-expanded", "false"); input.removeAttribute("aria-activedescendant");
+}
+function paintAc() {
+  sugg.querySelectorAll("li[data-i]").forEach((li) => {
+    const on = +li.dataset.i === acOn;
+    li.classList.toggle("on", on);
+    li.setAttribute("aria-selected", on);
+    if (on) { li.scrollIntoView({ block: "nearest" }); input.setAttribute("aria-activedescendant", li.id); }
+  });
+}
+async function showSugg() {
   const q = input.value.trim().replace(/^@/, "").toLowerCase();
-  if (q.length < 2 || !USERS.length) return closeSugg();
-  const starts = [], has = [];
-  for (const u of USERS) {
-    const l = u.toLowerCase();
-    if (l === q) continue;
-    if (l.startsWith(q)) starts.push(u); else if (l.includes(q)) has.push(u);
-    if (starts.length >= 6) break;
+  if (!q || q.includes("/")) return closeSugg();
+  const token = acToken;
+  const list = await loadUsers();
+  if (token !== acToken || input.value.trim().replace(/^@/, "").toLowerCase() !== q) return; // closed or changed while loading
+  const starts = [], contains = [];
+  for (const u of list) {
+    const i = u[0].toLowerCase().indexOf(q);
+    if (i === 0) starts.push(u); else if (i > 0) contains.push(u);
   }
-  const list = starts.concat(has).slice(0, 6);
-  if (!list.length) return closeSugg();
-  sugg.innerHTML = list.map((u, i) => `<li role="option" id="s${i}" data-u="${esc(u)}">@${esc(u)}</li>`).join("");
-  sugg.hidden = false; input.setAttribute("aria-expanded", "true"); sel = -1;
+  // real names before default "xouser123" handles, verified first, shorter first
+  const rank = (u) => (/^xouser\d+$/i.test(u[0]) ? 2 : 0) + (u[2] ? 0 : 1);
+  const by = (a, b) => rank(a) - rank(b) || a[0].length - b[0].length;
+  acItems = [...starts.sort(by), ...contains.sort(by)].slice(0, 8);
+  acOn = -1;
+  const hl = (name) => {
+    const i = name.toLowerCase().indexOf(q);
+    return esc(name.slice(0, i)) + "<b>" + esc(name.slice(i, i + q.length)) + "</b>" + esc(name.slice(i + q.length));
+  };
+  sugg.innerHTML = acItems.length
+    ? acItems.map(([name, a, v], i) => `<li role="option" id="ac${i}" data-i="${i}">${
+        a ? `<img src="${esc(avatarUrl(a))}" alt="" loading="lazy" referrerpolicy="no-referrer">` : `<span class="ph">${esc(name[0].toUpperCase())}</span>`
+      }<span class="nm">@${hl(name)}</span>${v ? `<span class="vf" title="Verified">✔</span>` : ""}</li>`).join("")
+    : `<li class="empty">No trader found. You can still try the exact username.</li>`;
+  // X avatar links go stale when people change their picture: fall back to the initial
+  sugg.querySelectorAll("img").forEach((img) => img.addEventListener("error", () => {
+    const ph = document.createElement("span");
+    ph.className = "ph";
+    ph.textContent = (img.closest("li").textContent.trim()[1] || "?").toUpperCase();
+    img.replaceWith(ph);
+  }, { once: true }));
+  sugg.hidden = false;
+  input.setAttribute("aria-expanded", "true");
+}
+function pick(i) {
+  const u = acItems[i];
+  if (!u) return;
+  input.value = u[0];
+  closeSugg();
+  run(u[0]);
 }
 input.addEventListener("input", showSugg);
+input.addEventListener("focus", () => { loadUsers(); if (input.value) showSugg(); });
 input.addEventListener("keydown", (e) => {
-  const items = [...sugg.querySelectorAll("li")];
-  if (sugg.hidden || !items.length) return;
-  if (e.key === "ArrowDown" || e.key === "ArrowUp") {
-    e.preventDefault();
-    sel = (sel + (e.key === "ArrowDown" ? 1 : -1) + items.length) % items.length;
-    items.forEach((li, i) => li.setAttribute("aria-selected", i === sel));
-    input.setAttribute("aria-activedescendant", items[sel].id);
-  } else if (e.key === "Enter" && sel >= 0) {
-    e.preventDefault(); input.value = items[sel].dataset.u; closeSugg(); run(input.value);
-  } else if (e.key === "Escape") closeSugg();
+  if (e.key === "Escape") return closeSugg();
+  if (sugg.hidden || !acItems.length) return;
+  if (e.key === "ArrowDown") { e.preventDefault(); acOn = (acOn + 1) % acItems.length; paintAc(); }
+  else if (e.key === "ArrowUp") { e.preventDefault(); acOn = (acOn - 1 + acItems.length) % acItems.length; paintAc(); }
+  else if (e.key === "Enter" && acOn >= 0) { e.preventDefault(); pick(acOn); }
 });
 sugg.addEventListener("mousedown", (e) => {
-  const li = e.target.closest("li"); if (!li) return;
-  e.preventDefault(); input.value = li.dataset.u; closeSugg(); run(input.value);
+  const li = e.target.closest("li[data-i]");
+  if (li) { e.preventDefault(); pick(+li.dataset.i); }
 });
 input.addEventListener("blur", () => setTimeout(closeSugg, 100));
 $("find").addEventListener("submit", (e) => { e.preventDefault(); closeSugg(); run(input.value); });
