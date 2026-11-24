@@ -1,0 +1,557 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fee Tally</title>
+<meta name="description" content="How much have you paid in trading fees on XO Market? Enter your XO username and see every fee added up: Markets, Convictions and Pulse.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Fee Tally: what have you paid in fees on XO?">
+<meta property="og:description" content="Every trading fee from your XO Market trades, added up: by product, by week and by market.">
+<meta name="twitter:card" content="summary">
+<meta name="theme-color" content="#f5f5f5">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='16' fill='%23ff87a6'/><path d='M20 14h24v36l-4-3-4 3-4-3-4 3-4-3-4 3z' fill='%23fff'/><path d='M26 25h12M26 32h12M26 39h7' stroke='%237a1230' stroke-width='3.5' stroke-linecap='round'/></svg>">
+<link rel="preload" href="fonts/open-runde-latin-600-normal.woff2" as="font" type="font/woff2" crossorigin>
+<style>
+  @font-face { font-family: "Open Runde"; font-weight: 400; font-display: swap; src: url(fonts/open-runde-latin-400-normal.woff2) format("woff2"); }
+  @font-face { font-family: "Open Runde"; font-weight: 500; font-display: swap; src: url(fonts/open-runde-latin-500-normal.woff2) format("woff2"); }
+  @font-face { font-family: "Open Runde"; font-weight: 600; font-display: swap; src: url(fonts/open-runde-latin-600-normal.woff2) format("woff2"); }
+  @font-face { font-family: "Open Runde"; font-weight: 700; font-display: swap; src: url(fonts/open-runde-latin-700-normal.woff2) format("woff2"); }
+
+  /* tokens follow the XO app (beta.xo.market) */
+  :root {
+    color-scheme: light;
+    --page: #f5f5f5; --card: #fff; --control: #f4f4f5; --control-hover: #ebebeb;
+    --line: #e6e8ea; --grid: #eef0f2;
+    --ink: #101114; --ink-2: #5f6168; --ink-3: #6b7078;
+    --pink: #ff87a6; --pink-ink: #7a1230; --pink-text: #c12c57; --pink-soft: #fff0f4;
+    --lav: #a293ff; --lav-text: #6941c6; --lav-soft: #f1edff;
+    --neg: #c0403d; --neg-soft: #fff0f0;
+    --shadow: 0 1px 2px rgba(16,17,20,.05);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --page: #121213; --card: #1b1b1d; --control: #222224; --control-hover: #2b2b2e;
+      --line: #323235; --grid: #29292c;
+      --ink: #f2f2f3; --ink-2: #bcbcc2; --ink-3: #a2a2ab;
+      --pink-text: #ffabc4; --pink-soft: #302127;
+      --lav-text: #c4b6ff; --lav-soft: #292533;
+      --neg: #ff8f8a; --neg-soft: #2e2020;
+      --shadow: 0 1px 3px rgba(0,0,0,.16);
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --page: #121213; --card: #1b1b1d; --control: #222224; --control-hover: #2b2b2e;
+    --line: #323235; --grid: #29292c;
+    --ink: #f2f2f3; --ink-2: #bcbcc2; --ink-3: #a2a2ab;
+    --pink-text: #ffabc4; --pink-soft: #302127;
+    --lav-text: #c4b6ff; --lav-soft: #292533;
+    --neg: #ff8f8a; --neg-soft: #2e2020;
+    --shadow: 0 1px 3px rgba(0,0,0,.16);
+  }
+
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  html { -webkit-text-size-adjust: 100%; }
+  body { margin: 0; background: var(--page); color: var(--ink); font: 400 14px/1.45 "Open Runde", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif; -webkit-font-smoothing: antialiased; }
+  a { color: inherit; }
+  button, input { font: inherit; color: inherit; }
+  h1, h2, h3, p { margin: 0; }
+  .num { font-variant-numeric: tabular-nums; }
+  .wrap { max-width: 980px; margin: 0 auto; padding: 0 16px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 16px; box-shadow: var(--shadow); }
+  .muted { color: var(--ink-3); }
+  :focus-visible { outline: 2px solid var(--lav-text); outline-offset: 2px; }
+
+  /* top bar */
+  .bar { position: sticky; top: 0; z-index: 20; background: var(--card); border-bottom: 1px solid var(--line); }
+  .bar .wrap { display: flex; align-items: center; gap: 12px; height: 56px; }
+  .brand { display: flex; align-items: center; gap: 9px; font-weight: 700; font-size: 17px; letter-spacing: -.01em; text-decoration: none; }
+  .brand svg { width: 26px; height: 26px; flex: none; }
+  .sp { flex: 1; }
+  .icon-btn { width: 36px; height: 36px; border-radius: 10px; border: 0; background: var(--control); display: grid; place-items: center; cursor: pointer; }
+  .icon-btn:hover { background: var(--control-hover); }
+  .icon-btn svg { width: 17px; height: 17px; }
+  .xo-link { display: inline-flex; align-items: center; height: 36px; padding: 0 14px; border-radius: 10px; background: var(--control); font-weight: 600; font-size: 13px; text-decoration: none; white-space: nowrap; }
+  .xo-link:hover { background: var(--control-hover); }
+
+  /* flat buttons, as in the XO app */
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 46px; padding: 0 20px; border-radius: 12px; border: 0; background: var(--pink); color: var(--pink-ink); font-weight: 700; font-size: 15px; cursor: pointer; text-decoration: none; white-space: nowrap; transition: filter .12s, transform .08s; }
+  .btn:hover { filter: brightness(.96); }
+  .btn:active { transform: scale(.98); }
+  .btn[disabled] { opacity: .55; pointer-events: none; }
+  .btn.soft { background: var(--control-hover); color: var(--ink); height: 38px; padding: 0 14px; font-size: 13px; font-weight: 600; border-radius: 10px; }
+  .btn svg { width: 16px; height: 16px; }
+
+  /* hero */
+  .hero { margin-top: 20px; padding: 28px; display: grid; gap: 18px; }
+  h1 { font-size: clamp(28px, 4.6vw, 42px); line-height: 1.08; font-weight: 700; letter-spacing: -.02em; text-wrap: balance; max-width: 18ch; }
+  h1 em { font-style: normal; color: var(--pink-text); }
+  .lede { font-size: 15px; color: var(--ink-2); max-width: 56ch; }
+  form.find { display: flex; gap: 10px; max-width: 560px; }
+  .field { position: relative; flex: 1; min-width: 0; }
+  .field input { width: 100%; height: 46px; border-radius: 12px; border: 1px solid var(--line); background: var(--control); padding: 0 14px 0 34px; font-size: 15px; font-weight: 500; }
+  .field input:focus { outline: none; border-color: var(--lav); background: var(--card); }
+  .field .at { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--ink-3); font-weight: 600; pointer-events: none; }
+  .sugg { position: absolute; left: 0; right: 0; top: calc(100% + 6px); z-index: 10; padding: 6px; margin: 0; list-style: none; }
+  .sugg li { padding: 8px 10px; border-radius: 8px; cursor: pointer; font-weight: 500; }
+  .sugg li[aria-selected="true"], .sugg li:hover { background: var(--control); }
+  .status { font-size: 13.5px; color: var(--ink-2); }
+  .status:empty { display: none; }
+  .status.err { color: var(--neg); }
+  .status a { color: var(--pink-text); font-weight: 600; }
+  .prog { height: 4px; border-radius: 4px; background: var(--control); overflow: hidden; max-width: 560px; }
+  .prog i { display: block; height: 100%; width: 30%; border-radius: 4px; background: var(--pink); animation: slide 1.1s ease-in-out infinite; }
+  @keyframes slide { from { transform: translateX(-100%); } to { transform: translateX(340%); } }
+  @media (max-width: 520px) { .hero { padding: 20px; } form.find { flex-direction: column; } }
+
+  /* results */
+  .res { display: grid; gap: 16px; margin-top: 16px; }
+  .who { display: flex; align-items: center; gap: 12px; padding: 16px 20px; }
+  .who img { width: 44px; height: 44px; border-radius: 50%; background: var(--control); flex: none; }
+  .who .nm { font-weight: 700; font-size: 16px; }
+  .who .un { color: var(--ink-3); font-size: 13px; }
+  .who .acts { margin-left: auto; display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+
+  .total { padding: 24px; display: grid; grid-template-columns: minmax(0,1.2fr) minmax(0,1fr); gap: 24px; align-items: center; }
+  .label { font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); }
+  .big { font-size: clamp(44px, 8vw, 68px); font-weight: 700; letter-spacing: -.03em; line-height: 1; margin: 8px 0 10px; }
+  .total .sub { color: var(--ink-2); font-size: 14px; }
+  .kv { display: grid; grid-template-columns: 1fr 1fr; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+  .kv > div { padding: 12px 14px; min-width: 0; }
+  .kv > div:nth-child(even) { border-left: 1px solid var(--line); }
+  .kv > div:nth-child(n+3) { border-top: 1px solid var(--line); }
+  .kv b { display: block; font-size: 17px; font-weight: 600; margin-top: 2px; }
+  @media (max-width: 720px) { .total { grid-template-columns: minmax(0,1fr); } }
+
+  .split { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 16px; }
+  .tile { padding: 18px 20px; display: grid; gap: 6px; align-content: start; }
+  .tile .head { display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 15px; }
+  .tile .dot { width: 10px; height: 10px; border-radius: 3px; flex: none; }
+  .tile .val { font-size: 26px; font-weight: 700; letter-spacing: -.02em; }
+  .tile .meta { font-size: 13px; color: var(--ink-2); }
+  .share-bar { height: 6px; border-radius: 4px; background: var(--control); overflow: hidden; margin-top: 4px; }
+  .share-bar i { display: block; height: 100%; border-radius: 4px; }
+  @media (max-width: 720px) { .split { grid-template-columns: minmax(0,1fr); } }
+
+  .panel { padding: 20px; }
+  .panel h2 { font-size: 16px; font-weight: 600; }
+  .panel .cap { font-size: 13px; color: var(--ink-3); margin-top: 2px; }
+  .chart { position: relative; margin-top: 16px; }
+  .chart svg { display: block; width: 100%; height: 220px; overflow: visible; }
+  .chart .tick { font-size: 11px; fill: var(--ink-3); }
+  .chart .gl { stroke: var(--grid); stroke-width: 1; }
+  .chart .base { stroke: var(--line); stroke-width: 1; }
+  .chart .bar-r { fill: var(--pink); }
+  .chart .hit { fill: transparent; cursor: default; }
+  .chart .hit:hover + .bar-r, .chart g.on .bar-r { filter: brightness(.92); }
+  .tip { position: absolute; pointer-events: none; background: var(--card); border: 1px solid var(--line); border-radius: 10px; box-shadow: 0 6px 20px rgba(0,0,0,.12); padding: 8px 10px; font-size: 12.5px; white-space: nowrap; transform: translate(-50%, calc(-100% - 10px)); }
+  .tip b { display: block; font-size: 14px; }
+
+  table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+  th { text-align: left; font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); padding: 8px 10px; border-bottom: 1px solid var(--line); }
+  td { padding: 10px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+  tr:last-child td { border-bottom: 0; }
+  th.r, td.r { text-align: right; white-space: nowrap; }
+  td .mk { display: flex; align-items: center; gap: 10px; min-width: 0; }
+  td .mk img { width: 28px; height: 28px; border-radius: 8px; object-fit: cover; flex: none; background: var(--control); }
+  td .mk .btc { width: 28px; height: 28px; border-radius: 8px; flex: none; display: grid; place-items: center; background: #f7931a; color: #fff; font-weight: 700; font-size: 15px; }
+  td .mk a { text-decoration: none; font-weight: 500; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+  td .mk a:hover { text-decoration: underline; }
+  .tag { display: inline-flex; height: 20px; align-items: center; padding: 0 7px; border-radius: 6px; font-size: 11px; font-weight: 600; background: var(--control); color: var(--ink-2); margin-left: 6px; white-space: nowrap; }
+  @media (max-width: 520px) { .hide-sm { display: none; } }
+
+  .note { padding: 16px 20px; font-size: 13px; color: var(--ink-2); display: grid; gap: 6px; }
+  .note b { color: var(--ink); }
+  footer { margin: 28px 0 40px; font-size: 12.5px; color: var(--ink-3); display: flex; gap: 8px 16px; flex-wrap: wrap; }
+  footer a { color: var(--ink-2); }
+</style>
+</head>
+<body>
+<header class="bar">
+  <div class="wrap">
+    <a class="brand" href="./">
+      <svg viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="16" fill="#ff87a6"/><path d="M20 14h24v36l-4-3-4 3-4-3-4 3-4-3-4 3z" fill="#fff"/><path d="M26 25h12M26 32h12M26 39h7" stroke="#7a1230" stroke-width="3.5" stroke-linecap="round"/></svg>
+      <span>Fee Tally</span>
+    </a>
+    <span class="sp"></span>
+    <a class="xo-link" id="xoTop" href="#" target="_blank" rel="noopener">Open XO ↗</a>
+    <button class="icon-btn" id="theme" type="button" aria-label="Switch light / dark">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+    </button>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="card hero">
+    <h1>How much have you paid in <em>fees</em> on XO?</h1>
+    <p class="lede">Every trade on XO Market can carry a small trading fee. Enter an XO username and Fee Tally adds them all up: Markets, Convictions and Pulse, week by week.</p>
+    <form class="find" id="find" autocomplete="off">
+      <div class="field">
+        <span class="at">@</span>
+        <input id="u" name="u" placeholder="XO username" aria-label="XO username" spellcheck="false" autocapitalize="off" role="combobox" aria-expanded="false" aria-controls="sugg" aria-autocomplete="list">
+        <ul class="sugg card" id="sugg" role="listbox" hidden></ul>
+      </div>
+      <button class="btn" id="go" type="submit">Count my fees</button>
+    </form>
+    <div class="prog" id="prog" hidden><i></i></div>
+    <p class="status" id="status" role="status" aria-live="polite"></p>
+  </section>
+
+  <div class="res" id="res" hidden>
+    <section class="card who">
+      <img id="pAva" alt="">
+      <div style="min-width:0">
+        <div class="nm" id="pName"></div>
+        <div class="un" id="pUser"></div>
+      </div>
+      <div class="acts">
+        <a class="btn soft" id="share" href="#" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.8 3h3.1l-6.8 7.7L22 21h-6.2l-4.9-6.4L5.3 21H2.2l7.2-8.3L2 3h6.4l4.4 5.8L17.8 3zm-1.1 16.2h1.7L7.4 4.7H5.6l11.1 14.5z"/></svg>
+          Share
+        </a>
+        <a class="btn soft" id="pLink" href="#" target="_blank" rel="noopener">XO profile ↗</a>
+      </div>
+    </section>
+
+    <section class="card total">
+      <div>
+        <div class="label">Total fees paid</div>
+        <div class="big num" id="tFee"></div>
+        <p class="sub" id="tSub"></p>
+      </div>
+      <div class="kv">
+        <div><span class="label">Trades with a fee</span><b class="num" id="kTrades"></b></div>
+        <div><span class="label">Their volume</span><b class="num" id="kVol"></b></div>
+        <div><span class="label">Average fee</span><b class="num" id="kRate"></b></div>
+        <div><span class="label">Biggest single fee</span><b class="num" id="kMax"></b></div>
+      </div>
+    </section>
+
+    <div class="split" id="split"></div>
+
+    <section class="card panel">
+      <h2>Fees by week</h2>
+      <p class="cap" id="wkCap">Weeks start on Monday, UTC.</p>
+      <div class="chart" id="chart"></div>
+    </section>
+
+    <section class="card panel">
+      <h2>Where the fees went</h2>
+      <p class="cap">Markets you paid the most fees on. All Pulse rounds are counted as one line.</p>
+      <table id="top">
+        <thead><tr><th>Market</th><th class="r hide-sm">Trades</th><th class="r hide-sm">Volume</th><th class="r">Fees</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </section>
+
+    <section class="card note">
+      <p><b>How it's counted.</b> Fee Tally reads the trade history from XO's public API and adds up the fee XO records on each buy and sell. XO records these fees from August 12, 2026, so earlier trades aren't included. Trades with no fee on record count as $0. Redeeming winning shares has no fee.</p>
+    </section>
+  </div>
+
+  <footer>
+    <span>Community-made. Not affiliated with XO Market.</span>
+    <span>Data: XO public API, read live in your browser.</span>
+    <a id="xoFoot" href="#" target="_blank" rel="noopener">Trade on XO Market</a>
+  </footer>
+</main>
+
+<script>
+const API = "https://api-mainnet.xo.market/api";
+const REF = "andriy_shkinder";
+const xoLink = (path = "/") => `https://beta.xo.market${path}?r=${REF}`;
+const SCOPES = [
+  { key: "markets", name: "Markets", q: "", color: "var(--pink)" },
+  { key: "conv", name: "Convictions", q: "onlyConviction", color: "var(--lav)" },
+  { key: "pulse", name: "Pulse", q: "onlyClobPulse", color: "#f7931a" },
+];
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const usd = (v, d) => {
+  const n = Math.abs(v);
+  const dec = d ?? (n >= 1000 ? 0 : n >= 1 || n === 0 ? 2 : 4);
+  return "$" + v.toLocaleString("en-US", { minimumFractionDigits: dec, maximumFractionDigits: dec });
+};
+const int = (v) => v.toLocaleString("en-US");
+const pct = (v) => (v * 100).toFixed(2) + "%";
+const fmtDate = (d) => d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" });
+
+$("xoTop").href = xoLink();
+$("xoFoot").href = xoLink();
+
+/* theme */
+const themeKey = "fee-tally-theme";
+try { const t = localStorage.getItem(themeKey); if (t) document.documentElement.dataset.theme = t; } catch {}
+$("theme").onclick = () => {
+  const dark = document.documentElement.dataset.theme
+    ? document.documentElement.dataset.theme === "dark"
+    : matchMedia("(prefers-color-scheme: dark)").matches;
+  const next = dark ? "light" : "dark";
+  document.documentElement.dataset.theme = next;
+  try { localStorage.setItem(themeKey, next); } catch {}
+};
+
+/* username suggestions */
+let USERS = [];
+fetch("users.json").then((r) => r.json()).then((u) => { USERS = u; }).catch(() => {});
+const input = $("u"), sugg = $("sugg");
+let sel = -1;
+function closeSugg() { sugg.hidden = true; input.setAttribute("aria-expanded", "false"); sel = -1; }
+function showSugg() {
+  const q = input.value.trim().replace(/^@/, "").toLowerCase();
+  if (q.length < 2 || !USERS.length) return closeSugg();
+  const starts = [], has = [];
+  for (const u of USERS) {
+    const l = u.toLowerCase();
+    if (l === q) continue;
+    if (l.startsWith(q)) starts.push(u); else if (l.includes(q)) has.push(u);
+    if (starts.length >= 6) break;
+  }
+  const list = starts.concat(has).slice(0, 6);
+  if (!list.length) return closeSugg();
+  sugg.innerHTML = list.map((u, i) => `<li role="option" id="s${i}" data-u="${esc(u)}">@${esc(u)}</li>`).join("");
+  sugg.hidden = false; input.setAttribute("aria-expanded", "true"); sel = -1;
+}
+input.addEventListener("input", showSugg);
+input.addEventListener("keydown", (e) => {
+  const items = [...sugg.querySelectorAll("li")];
+  if (sugg.hidden || !items.length) return;
+  if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+    e.preventDefault();
+    sel = (sel + (e.key === "ArrowDown" ? 1 : -1) + items.length) % items.length;
+    items.forEach((li, i) => li.setAttribute("aria-selected", i === sel));
+    input.setAttribute("aria-activedescendant", items[sel].id);
+  } else if (e.key === "Enter" && sel >= 0) {
+    e.preventDefault(); input.value = items[sel].dataset.u; closeSugg(); run(input.value);
+  } else if (e.key === "Escape") closeSugg();
+});
+sugg.addEventListener("mousedown", (e) => {
+  const li = e.target.closest("li"); if (!li) return;
+  e.preventDefault(); input.value = li.dataset.u; closeSugg(); run(input.value);
+});
+input.addEventListener("blur", () => setTimeout(closeSugg, 100));
+$("find").addEventListener("submit", (e) => { e.preventDefault(); closeSugg(); run(input.value); });
+
+/* XO API */
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+async function api(path, tries = 4) {
+  for (let i = 0; ; i++) {
+    let r;
+    try { r = await fetch(API + path); } catch (err) { if (i >= tries) throw err; await sleep(800 * (i + 1)); continue; }
+    if (r.status === 429 || r.status >= 500) { if (i >= tries) throw new Error("XO API " + r.status); await sleep(1500 * (i + 1)); continue; }
+    if (!r.ok) { const e = new Error("XO API " + r.status); e.code = r.status; throw e; }
+    return r.json();
+  }
+}
+/* XO serves about one page a second, so the pages after the first are read a few at a time
+   (well under XO's 100 requests / 10 s). Identical rows are real separate fills (their sum
+   matches XO's own volume), so they are kept. Only if the trader traded while we were
+   reading do rows slide down across page boundaries; then the overlap at each boundary
+   is dropped. */
+let slots = 6;
+const waiting = [];
+async function limited(fn) {
+  if (slots > 0) slots--; else await new Promise((r) => waiting.push(r));
+  try { return await fn(); } finally { const next = waiting.shift(); if (next) next(); else slots++; }
+}
+async function allActivities(user, scope, onPage) {
+  const path = (page) => `/profiles/${encodeURIComponent(user)}/activities?take=100&page=${page}${scope.q ? "&marketScope=" + scope.q : ""}`;
+  const first = await limited(() => api(path(1)));
+  const pages = [first.data || []];
+  onPage(pages[0].length);
+  const count = Math.min(first.meta?.pageCount || 1, 1000);
+  await Promise.all(Array.from({ length: count - 1 }, (_, i) => limited(async () => {
+    const j = await api(path(i + 2));
+    pages[i + 1] = j.data || [];
+    onPage(pages[i + 1].length);
+  })));
+  if (count < 2) return pages[0];
+  const key = (a) => a ? [a.date, a.marketId, a.positionType, a.description, a.volumeInUSD].join("|") : "";
+  const again = await limited(() => api(path(1)));
+  if (key((again.data || [])[0]) === key(pages[0][0])) return pages.flat();
+  const out = [...pages[0]];
+  for (let i = 1; i < pages.length; i++) {
+    const prev = pages[i - 1], cur = pages[i];
+    let m = Math.min(prev.length, cur.length, 100);
+    while (m > 0 && !prev.slice(-m).every((a, j) => key(a) === key(cur[j]))) m--;
+    out.push(...cur.slice(m));
+  }
+  return out;
+}
+
+/* main */
+let runId = 0;
+const setStatus = (html, err) => { $("status").innerHTML = html; $("status").classList.toggle("err", !!err); };
+async function run(raw) {
+  const name = String(raw || "").trim().replace(/^@/, "").replace(/^https?:\/\/[^/]+\/profile\//, "").replace(/[/?#].*$/, "");
+  if (!name) { setStatus("Type an XO username first.", true); input.focus(); return; }
+  const id = ++runId;
+  $("res").hidden = true; $("prog").hidden = false; $("go").disabled = true;
+  setStatus(`Looking up @${esc(name)}…`);
+  try {
+    let p;
+    try { p = await api(`/profiles/${encodeURIComponent(name)}`); }
+    catch (e) {
+      if (e.code === 404) throw Object.assign(new Error(), { show: `No XO user called "@${esc(name)}". Check the spelling, or <a href="${xoLink()}" target="_blank" rel="noopener">join XO Market</a>.` });
+      throw e;
+    }
+    if (id !== runId) return;
+    const url = new URL(location.href); url.searchParams.set("u", p.username); history.replaceState(null, "", url);
+    if (p.isPrivate) throw Object.assign(new Error(), { show: `@${esc(p.username)} has a private profile, so XO doesn't share its trades. If it's yours, switch the profile to public in XO's settings, check here, and switch it back.` });
+
+    let rows = 0;
+    const tick = (n) => { rows += n; if (id === runId) setStatus(`Reading @${esc(p.username)}'s trades… ${int(rows)} so far`); };
+    const lists = await Promise.all(SCOPES.map((s) => allActivities(p.username, s, tick)));
+    if (id !== runId) return;
+    render(p, lists);
+    setStatus("");
+  } catch (e) {
+    if (id !== runId) return;
+    if (!e.show) console.error("fee-tally", e);
+    setStatus(e.show || "Couldn't reach XO right now. Try again in a minute.", true);
+  } finally {
+    if (id === runId) { $("prog").hidden = true; $("go").disabled = false; }
+  }
+}
+
+function weekStart(d) {
+  const t = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate());
+  const dow = (new Date(t).getUTCDay() + 6) % 7;
+  return t - dow * 864e5;
+}
+
+function render(p, lists) {
+  const per = SCOPES.map((s) => ({ ...s, fee: 0, n: 0, vol: 0, all: 0 }));
+  const weeks = new Map(), markets = new Map();
+  let total = 0, n = 0, vol = 0, max = null, first = null, noFee = 0;
+  lists.forEach((list, i) => {
+    const sc = per[i];
+    for (const a of list) {
+      if (a.activityType !== "user" || (a.positionType !== "BUY" && a.positionType !== "SELL")) continue;
+      sc.all++;
+      const fee = a.tradingFee ? +a.tradingFee.feeInUSD || 0 : 0;
+      if (!(fee > 0)) { noFee++; continue; }
+      const v = +a.volumeInUSD || 0, d = new Date(a.date);
+      total += fee; n++; vol += v; sc.fee += fee; sc.n++; sc.vol += v;
+      if (!max || fee > max.fee) max = { fee, title: a.marketTitle, date: d };
+      if (!first || d < first) first = d;
+      const w = weekStart(d); weeks.set(w, (weeks.get(w) || 0) + fee);
+      const mk = sc.key === "pulse" ? "pulse" : a.slug || a.marketTitle;
+      const m = markets.get(mk) || { title: sc.key === "pulse" ? "BTC 5min Pulse" : a.marketTitle, slug: sc.key === "pulse" ? null : a.slug, pic: a.picture, kind: sc.name, fee: 0, n: 0, vol: 0 };
+      m.fee += fee; m.n++; m.vol += v; markets.set(mk, m);
+    }
+  });
+
+  const ava = $("pAva");
+  ava.onerror = () => { ava.onerror = null; if (p.profilePictureUrl) ava.src = p.profilePictureUrl; };
+  ava.src = (p.profilePictureUrl || "").replace("_normal.", "_bigger.");
+  $("pName").textContent = p.name || p.username;
+  $("pUser").textContent = "@" + p.username;
+  $("pLink").href = xoLink(`/profile/${encodeURIComponent(p.username)}`);
+
+  $("tFee").textContent = usd(total, 2);
+  $("tSub").textContent = n
+    ? `on ${int(n)} trade${n === 1 ? "" : "s"} since ${fmtDate(first)}. ${int(noFee)} other trade${noFee === 1 ? "" : "s"} had no fee on record.`
+    : `No fees on record for @${p.username}${noFee ? ` across ${int(noFee)} trades` : ""}.`;
+  $("kTrades").textContent = int(n);
+  $("kVol").textContent = usd(vol, vol >= 1000 ? 0 : 2);
+  $("kRate").textContent = vol ? pct(total / vol) : "–";
+  $("kMax").textContent = max ? usd(max.fee) : "–";
+  $("kMax").title = max ? `${max.title}, ${fmtDate(max.date)}` : "";
+
+  $("split").innerHTML = per.map((s) => `
+    <section class="card tile">
+      <div class="head"><span class="dot" style="background:${s.color}"></span>${s.name}</div>
+      <div class="val num">${usd(s.fee, 2)}</div>
+      <div class="meta num">${int(s.n)} trade${s.n === 1 ? "" : "s"} with a fee${s.vol ? ` · avg ${pct(s.fee / s.vol)}` : ""}</div>
+      <div class="share-bar" title="${total ? Math.round((s.fee / total) * 100) : 0}% of all fees"><i style="width:${total ? (s.fee / total) * 100 : 0}%;background:${s.color}"></i></div>
+    </section>`).join("");
+
+  drawWeeks(weeks);
+
+  const top = [...markets.values()].sort((a, b) => b.fee - a.fee).slice(0, 8);
+  $("top").querySelector("tbody").innerHTML = top.length ? top.map((m) => `
+    <tr>
+      <td><div class="mk">${m.kind === "Pulse" ? `<span class="btc" aria-hidden="true">₿</span>` : m.pic && !m.pic.includes("placeholder") ? `<img src="${esc(m.pic)}" alt="" loading="lazy">` : `<img alt="">`}
+        <span style="min-width:0">${m.slug ? `<a href="${xoLink("/event/" + encodeURIComponent(m.slug))}" target="_blank" rel="noopener">${esc(m.title)}</a>` : `<a href="${xoLink("/pulse")}" target="_blank" rel="noopener">${esc(m.title)}</a>`}</span><span class="tag">${m.kind}</span></div></td>
+      <td class="r num hide-sm">${int(m.n)}</td>
+      <td class="r num hide-sm">${usd(m.vol, m.vol >= 1000 ? 0 : 2)}</td>
+      <td class="r num"><b>${usd(m.fee)}</b></td>
+    </tr>`).join("") : `<tr><td colspan="4" class="muted">No fees yet.</td></tr>`;
+
+  const page = new URL(location.href); page.search = "?u=" + encodeURIComponent(p.username);
+  const text = n
+    ? `I've paid ${usd(total, 2)} in trading fees on XO Market across ${int(n)} trades. How much have you paid?`
+    : `I've paid $0 in trading fees on XO Market so far. How much have you paid?`;
+  $("share").href = `https://x.com/intent/post?text=${encodeURIComponent(text + "\n\n" + page.href)}`;
+
+  $("res").hidden = false;
+}
+
+function drawWeeks(weeks) {
+  const box = $("chart");
+  if (!weeks.size) { box.innerHTML = `<p class="muted">No fees yet.</p>`; return; }
+  const keys = [...weeks.keys()].sort((a, b) => a - b);
+  const all = [];
+  for (let t = keys[0]; t <= keys[keys.length - 1]; t += 7 * 864e5) all.push([t, weeks.get(t) || 0]);
+  const W = Math.max(box.clientWidth, 280), H = 220, L = 52, R = 8, T = 10, B = 26;
+  const maxV = Math.max(...all.map((x) => x[1]));
+  const step = niceStep(maxV / 4), top = Math.ceil(maxV / step) * step || 1;
+  const y = (v) => T + (H - T - B) * (1 - v / top);
+  const slot = (W - L - R) / all.length, bw = Math.max(2, Math.min(36, slot - 2));
+  let s = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Fees paid per week">`;
+  for (let v = 0; v <= top + 1e-9; v += step) {
+    s += `<line class="${v ? "gl" : "base"}" x1="${L}" x2="${W - R}" y1="${y(v)}" y2="${y(v)}"/>`;
+    s += `<text class="tick num" x="${L - 8}" y="${y(v) + 4}" text-anchor="end">${usd(v, step < 1 ? 2 : 0)}</text>`;
+  }
+  let lastMonth = -1, lastX = -99;
+  all.forEach(([t, v], i) => {
+    const x = L + i * slot + (slot - bw) / 2, yy = y(v), h = Math.max(0, y(0) - yy), r = Math.min(4, bw / 2, h);
+    const d = new Date(t), m = d.getUTCMonth();
+    s += `<g data-i="${i}"><rect class="hit" x="${L + i * slot}" y="${T}" width="${slot}" height="${H - T - B}"/>`;
+    if (h > 0) s += `<path class="bar-r" d="M${x},${y(0)} V${yy + r} Q${x},${yy} ${x + r},${yy} H${x + bw - r} Q${x + bw},${yy} ${x + bw},${yy + r} V${y(0)} Z"/>`;
+    s += `</g>`;
+    if (m !== lastMonth && x - lastX > 34) {
+      s += `<text class="tick" x="${x}" y="${H - 8}">${d.toLocaleDateString("en-US", { month: "short", timeZone: "UTC" })}</text>`;
+      lastMonth = m; lastX = x;
+    }
+  });
+  s += `</svg><div class="tip" hidden></div>`;
+  box.innerHTML = s;
+  const tip = box.querySelector(".tip");
+  box.querySelectorAll("g[data-i]").forEach((g) => {
+    const i = +g.dataset.i, [t, v] = all[i];
+    const show = () => {
+      box.querySelectorAll("g.on").forEach((o) => o.classList.remove("on")); g.classList.add("on");
+      const sc = box.clientWidth / W;
+      tip.innerHTML = `<b class="num">${usd(v)}</b>Week of ${fmtDate(new Date(t))}`;
+      tip.style.left = Math.min(Math.max((L + i * slot + slot / 2) * sc, 70), box.clientWidth - 70) + "px";
+      tip.style.top = y(v) * sc + "px"; tip.hidden = false;
+    };
+    g.addEventListener("mouseenter", show);
+    g.addEventListener("touchstart", show, { passive: true });
+    g.addEventListener("mouseleave", () => { tip.hidden = true; g.classList.remove("on"); });
+  });
+}
+function niceStep(raw) {
+  if (!(raw > 0)) return 1;
+  const p = Math.pow(10, Math.floor(Math.log10(raw))), f = raw / p;
+  return (f <= 1 ? 1 : f <= 2 ? 2 : f <= 2.5 ? 2.5 : f <= 5 ? 5 : 10) * p;
+}
+
+let lastW = 0, lastWeeks = null;
+const origDraw = drawWeeks;
+drawWeeks = (w) => { lastWeeks = w; origDraw(w); };
+addEventListener("resize", () => {
+  const w = $("chart").clientWidth;
+  if (lastWeeks && Math.abs(w - lastW) > 20) { lastW = w; origDraw(lastWeeks); }
+});
+
+const start = new URLSearchParams(location.search).get("u");
+if (start) { input.value = start; run(start); }
+</script>
+</body>
+</html>
