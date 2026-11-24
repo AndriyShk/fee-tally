@@ -249,8 +249,13 @@
   .notice .nt-ic { width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center; background: var(--pink-soft); color: var(--pink-text); }
   .notice .nt-ic svg { width: 22px; height: 22px; }
   .notice.nt-down .nt-ic { background: var(--neg-soft); color: var(--neg); }
-  .notice .nt-who { display: flex; align-items: center; gap: 8px; font-weight: 600; color: var(--ink-2); font-size: 14px; }
-  .notice .nt-who img { width: 26px; height: 26px; border-radius: 50%; }
+  .notice .nt-head { display: flex; align-items: center; gap: 14px; margin-bottom: 2px; }
+  .notice .nt-head .nt-ic { flex: none; width: 52px; height: 52px; }
+  .notice .nt-pic { position: relative; width: 52px; height: 52px; flex: none; }
+  .notice .nt-pic img { width: 52px; height: 52px; border-radius: 50%; display: block; background: var(--card); }
+  .notice .nt-badge { position: absolute; right: -4px; bottom: -4px; width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; background: var(--pink); color: var(--pink-ink); box-shadow: 0 0 0 3px var(--control); }
+  .notice .nt-badge svg { width: 13px; height: 13px; }
+  .notice .nt-who { font-weight: 600; color: var(--ink-3); font-size: 14px; margin-top: 2px; }
   .notice h3 { font-size: 20px; font-weight: 700; letter-spacing: -.01em; }
   .notice p { font-size: 14px; color: var(--ink-2); }
   .notice p b { color: var(--ink); }
@@ -693,18 +698,21 @@ const ICONS = {
 };
 function showNotice(n) {
   const el = $("notice"), u = n.user ? esc(n.user) : "";
-  const who = n.user ? `<div class="nt-who">${n.ava ? `<img src="${esc(n.ava.replace("_normal.", "_bigger."))}" alt="" referrerpolicy="no-referrer" onerror="this.remove()">` : ""}<span>@${u}</span></div>` : "";
+  // head row: the icon (on the avatar as a badge when there is one), then the title and the username
+  const titles = { private: "This profile is private", missing: "No XO user by that name", down: "Couldn't reach XO" };
+  const pic = n.ava ? `<span class="nt-pic"><img src="${esc(n.ava.replace("_normal.", "_bigger."))}" alt="" referrerpolicy="no-referrer" onerror="this.remove()"><span class="nt-badge">${ICONS[n.kind]}</span></span>` : `<div class="nt-ic">${ICONS[n.kind]}</div>`;
+  const head = `<div class="nt-head">${pic}<div><h3>${titles[n.kind]}</h3>${n.user ? `<div class="nt-who">@${u}</div>` : ""}</div></div>`;
   const body = {
-    private: `<h3>This profile is private</h3><p>XO only shares trades of public profiles, so there's nothing to count for <b>@${u}</b>.</p>
+    private: `<p>XO only shares trades of public profiles, so there's nothing to count for <b>@${u}</b>.</p>
       <ol><li>Open your XO profile settings</li><li>Switch the profile to public</li><li>Count your fees here, then switch it back</li></ol>
       <a class="btn soft" href="${xoLink(`/profile/${encodeURIComponent(n.user)}`)}" target="_blank" rel="noopener">Open XO profile ↗</a>`,
-    missing: `<h3>No XO user by that name</h3><p>There's no <b>@${u}</b> on XO Market. Check the spelling, or pick a name from the suggestions as you type.</p>
+    missing: `<p>There's no <b>@${u}</b> on XO Market. Check the spelling, or pick a name from the suggestions as you type.</p>
       <a class="btn soft" href="${xoLink()}" target="_blank" rel="noopener">Join XO Market ↗</a>`,
-    down: `<h3>Couldn't reach XO</h3><p>XO's API didn't answer just now. Give it a minute and try again.</p>
+    down: `<p>XO's API didn't answer just now. Give it a minute and try again.</p>
       <button class="btn soft" type="button" onclick="run(input.value)">Try again</button>`,
   }[n.kind];
   el.className = "notice nt-" + n.kind;
-  el.innerHTML = `<div class="nt-ic">${ICONS[n.kind]}</div>${who}${body}`;
+  el.innerHTML = head + body;
   el.hidden = false;
 }
 
