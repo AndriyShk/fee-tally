@@ -93,9 +93,8 @@
   .btn svg { width: 16px; height: 16px; }
 
   /* hero */
-  .hero { margin-top: 20px; padding: 28px; display: grid; grid-template-columns: minmax(0,1fr) 330px; gap: 24px; align-items: center; position: relative; z-index: 5; }
+  .hero { margin-top: 20px; padding: 28px; display: grid; grid-template-columns: minmax(0,1fr); gap: 24px; position: relative; z-index: 5; }
   .hero-main { display: grid; gap: 18px; min-width: 0; }
-  .hero-art { align-self: stretch; display: grid; place-items: center; }
   .mascot { width: 330px; height: auto; aspect-ratio: 1; display: block; overflow: visible; } /* the rooster itself stays still: only his pencil hand and the receipt move */
   /* the pencil hand: an idle tap now and then, fast scribbling while the scan runs */
   .mascot .hand { transform-box: view-box; transform-origin: 720px 350px; animation: tap 3.2s ease-in-out infinite; }
@@ -108,8 +107,6 @@
   .fc-art .fold { fill: #fff; stroke: #111; stroke-width: 6; stroke-linejoin: round; }
   .mascot .fold { fill: #fff; stroke: #111; stroke-width: 6; stroke-linejoin: round; transform-box: fill-box; transform-origin: 50% 100%; animation: fold .35s cubic-bezier(.2,1.6,.4,1) both; }
   @keyframes fold { from { transform: scale(.6, .2); opacity: 0; } to { transform: none; opacity: 1; } }
-  @media (max-width: 860px) { .hero { grid-template-columns: minmax(0,1fr) 240px; } .mascot { width: 240px; } }
-  @media (max-width: 640px) { .hero { grid-template-columns: minmax(0,1fr); } .hero-art { order: -1; margin: -14px 0 -14px; } .mascot { width: 200px; } }
   h1 { font-size: clamp(28px, 4.6vw, 42px); line-height: 1.08; font-weight: 700; letter-spacing: -.02em; text-wrap: balance; max-width: 18ch; }
   h1 em { font-style: normal; color: var(--pink-text); }
   .lede { font-size: 15px; color: var(--ink-2); max-width: 56ch; }
@@ -200,15 +197,16 @@
   .fc-who b { display: block; font-size: 24px; font-weight: 700; letter-spacing: -.01em; }
   .fc-who small { display: block; font-size: 15px; color: var(--ink-3); font-weight: 500; }
   .fc-ava { width: 60px; height: 60px; border-radius: 50%; flex: none; object-fit: cover; background: var(--control); box-shadow: 0 0 0 3px var(--pink); display: grid; place-items: center; font-weight: 700; font-size: 24px; color: var(--ink-2); }
-  .fc-main { display: grid; grid-template-columns: 330px minmax(0,1fr); gap: 34px; min-height: 0; }
+  .fc-main { display: grid; grid-template-columns: minmax(0,1fr); min-height: 0; }
   .fc-art { position: relative; border-radius: 24px; background: linear-gradient(180deg, var(--pink-soft), var(--lav-soft)); display: grid; align-content: start; justify-items: center; overflow: hidden; }
   .fc-art svg { width: 330px; height: 330px; margin-top: 46px; overflow: visible; }
-  .fc-url { position: absolute; left: 0; right: 0; bottom: 26px; text-align: center; font-size: 17px; font-weight: 600; color: var(--ink-2); }
+  .fc-row { display: flex; align-items: baseline; gap: 16px; }
+  .fc-url { margin-left: auto; font-size: 17px; font-weight: 600; color: var(--ink-2); white-space: nowrap; }
   .fc-url b { color: var(--pink-text); }
   .fc-body { display: flex; flex-direction: column; min-width: 0; }
   .fc-kick { font-size: 15px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--pink-text); }
-  .fc-big { font-size: 92px; font-weight: 700; letter-spacing: -.035em; line-height: 1; margin: 8px 0 10px; font-variant-numeric: tabular-nums; }
-  .fc-roast { font-size: 20px; line-height: 1.35; color: var(--ink-2); max-width: 38ch; }
+  .fc-big { font-size: 104px; font-weight: 700; letter-spacing: -.035em; line-height: 1; margin: 8px 0 10px; font-variant-numeric: tabular-nums; }
+  .fc-roast { font-size: 21px; line-height: 1.35; color: var(--ink-2); max-width: 60ch; }
   .fc-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
   .fc-chips span { display: inline-flex; align-items: center; gap: 7px; height: 36px; padding: 0 14px; border-radius: 12px; background: var(--control); font-size: 15.5px; font-weight: 600; color: var(--ink); white-space: nowrap; }
   .fc-tiles { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 10px; margin-top: 18px; }
@@ -301,18 +299,6 @@
       </div>
     </div>
     <p class="status" id="status" role="status" aria-live="polite"></p>
-    </div>
-    <div class="hero-art" aria-hidden="true">
-      <!-- the accountant: the base picture minus his pencil hand, the receipt tape drawn on top (it grows with the scan), then the hand on its own so it can write -->
-      <svg class="mascot" viewBox="-20 -24 1064 1056">
-        <defs>
-          <clipPath id="noHand"><path clip-rule="evenodd" d="M-40 -40H1064V1064H-40Z M640 178 L782 178 L782 342 L748 350 L690 350 L622 338 L640 300 Z"/></clipPath>
-          <clipPath id="handOnly"><path d="M637 175 L785 175 L785 345 L749 353 L689 353 L619 340 L637 299 Z"/></clipPath>
-        </defs>
-        <image href="mascot/accountant.webp" width="1024" height="1024" clip-path="url(#noHand)"/>
-        <g id="pile"></g><g id="tape"></g>
-        <g class="hand"><image href="mascot/accountant.webp" width="1024" height="1024" clip-path="url(#handOnly)"/></g>
-      </svg>
     </div>
   </section>
 
@@ -536,6 +522,7 @@ async function run(raw) {
 const tape = (() => {
   const NS = "http://www.w3.org/2000/svg";
   const g = document.getElementById("tape"), pileG = document.getElementById("pile");
+  if (!g) return { snap() {}, reset() {}, progress() {} }; // mascot is off for now
   // the sheet's bottom edge in the picture (1024 px space) and the curve the tape follows down to the floor
   const L = [642, 578], R = [722, 575], W = Math.hypot(R[0] - L[0], R[1] - L[1]);
   const P0 = [(L[0] + R[0]) / 2, (L[1] + R[1]) / 2], P1 = [690, 720], P2 = [790, 750], P3 = [800, 972];
@@ -677,22 +664,6 @@ function roast(total, n) {
   return "Serious volume, serious receipts. The accountant needs a bigger desk.";
 }
 
-// the accountant with his final receipt, copied from the hero (pictures inlined so the PNG export keeps them)
-async function cardMascot() {
-  tape.snap();
-  const svg = document.querySelector(".hero .mascot").cloneNode(true);
-  svg.removeAttribute("class");
-  svg.querySelectorAll("[id]").forEach((el) => {
-    const id = el.id;
-    el.id = id + "-c";
-    svg.querySelectorAll(`[clip-path="url(#${id})"]`).forEach((u) => u.setAttribute("clip-path", `url(#${id}-c)`));
-  });
-  svg.querySelectorAll(".hand").forEach((h) => h.removeAttribute("class"));
-  const data = await mascotData();
-  if (data) svg.querySelectorAll("image").forEach((im) => im.setAttribute("href", data));
-  return svg.outerHTML;
-}
-
 function weeksSVG(weeks) {
   if (!weeks.size) return "";
   const keys = [...weeks.keys()].sort((a, b) => a - b), all = [];
@@ -726,9 +697,8 @@ async function render(p, lists) {
     }
   });
   const top = [...markets.values()].sort((a, b) => b.fee - a.fee)[0];
-  const [ava, art, topPic] = await Promise.all([
+  const [ava, topPic] = await Promise.all([
     p.profilePictureUrl ? toDataURL(p.profilePictureUrl.replace("_normal.", "_bigger.")).then((d) => d || toDataURL(p.profilePictureUrl)) : "",
-    cardMascot(),
     top && top.pic && !top.pic.includes("placeholder") ? toDataURL(top.pic) : "",
   ]);
   const since = first ? first.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" }) : "Aug 12, 2026";
@@ -741,9 +711,8 @@ async function render(p, lists) {
       <div class="fc-who"><div><b>@${esc(p.username)}</b><small>Trading fees on XO Market</small></div>${ava ? `<img class="fc-ava" src="${ava}" alt="">` : `<span class="fc-ava">${esc((p.username[0] || "?").toUpperCase())}</span>`}</div>
     </div>
     <div class="fc-main">
-      <div class="fc-art">${art}<div class="fc-url">get yours → <b>${esc(host)}</b></div></div>
       <div class="fc-body">
-        <div class="fc-kick rv" style="--d:.15s">Total fees paid · since ${since}</div>
+        <div class="fc-row rv" style="--d:.15s"><div class="fc-kick">Total fees paid · since ${since}</div><div class="fc-url">get yours → <b>${esc(host)}</b></div></div>
         <div class="fc-big rv" style="--d:.25s" id="cardBig">${usd(total, 2)}</div>
         <div class="fc-roast rv" style="--d:.5s">${esc(roast(total, n))}</div>
         <div class="fc-chips">
