@@ -303,6 +303,8 @@
   .fc-cat .cl i { width: 10px; height: 10px; border-radius: 3px; flex: none; }
   .fc-cat .cv { grid-row: 1 / span 2; grid-column: 2; align-self: center; font-size: 30px; font-weight: 700; letter-spacing: -.02em; font-variant-numeric: tabular-nums; white-space: nowrap; }
   .fc-cat .cs { font-size: 14px; color: var(--ink-2); }
+  .fc-cat .cs.one { grid-column: 1 / -1; font-size: 15px; font-weight: 600; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 6px; }
+  .fc-cat .cs.dim { grid-column: 1 / -1; color: var(--ink-3); }
   .fc-cat .cb { grid-column: 1 / -1; height: 6px; border-radius: 4px; background: var(--control); overflow: hidden; margin-top: 10px; }
   .fc-cat .cb b { display: block; height: 100%; border-radius: 4px; }
   /* reveal: the parts of the card rise in one after another; the total counts up */
@@ -823,7 +825,7 @@ let current = null;
 async function render(p, lists) {
   const per = SCOPES.map((s) => ({ ...s, fee: 0, n: 0, vol: 0 }));
   const weeks = new Map(), markets = new Map();
-  let total = 0, n = 0, vol = 0, max = 0, first = null;
+  let total = 0, n = 0, vol = 0, max = 0, first = null, maxAt = null;
   lists.forEach((list, i) => {
     const sc = per[i];
     for (const a of list) {
@@ -832,7 +834,7 @@ async function render(p, lists) {
       if (!(fee > 0)) continue;
       const v = +a.volumeInUSD || 0, d = new Date(a.date);
       total += fee; n++; vol += v; sc.fee += fee; sc.n++; sc.vol += v;
-      if (fee > max) max = fee;
+      if (fee > max) { max = fee; maxAt = { title: sc.key === "pulse" ? "BTC 5min Pulse" : a.marketTitle, date: d }; }
       if (!first || d < first) first = d;
       const w = weekStart(d); weeks.set(w, (weeks.get(w) || 0) + fee);
       // one entry per market; every 5-minute Pulse round is its own market, named by when it ran
@@ -878,7 +880,8 @@ async function render(p, lists) {
         </div>`; }).join("")}
         <div class="fc-cat rv" style="--d:.61s">
           <div class="cl"><i style="background:var(--ink-3)"></i>Biggest fee</div><div class="cv">${max ? usd(max) : "–"}</div>
-          <div class="cs">on a single trade</div>
+          ${maxAt ? `<div class="cs one" title="${esc(maxAt.title)}">${esc(maxAt.title)}</div>
+          <div class="cs dim">one trade · ${maxAt.date.toLocaleString("en-GB", { day: "numeric", month: "short", year: "numeric", ...(maxAt.title === "BTC 5min Pulse" ? { hour: "2-digit", minute: "2-digit", timeZone: "UTC" } : { timeZone: "UTC" }) })}${maxAt.title === "BTC 5min Pulse" ? " UTC" : ""}</div>` : `<div class="cs">no fees yet</div>`}
         </div>
       </div>
     </div>
