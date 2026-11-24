@@ -203,7 +203,7 @@
   .fc-row { display: flex; align-items: baseline; gap: 16px; }
   .fc-url { margin-left: auto; font-size: 17px; font-weight: 600; color: var(--ink-2); white-space: nowrap; }
   .fc-url b { color: var(--pink-text); }
-  .fc-body { display: flex; flex-direction: column; min-width: 0; }
+  .fc-body { display: flex; flex-direction: column; justify-content: center; min-width: 0; }
   .fc-kick { font-size: 15px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--pink-text); }
   .fc-big { font-size: 104px; font-weight: 700; letter-spacing: -.035em; line-height: 1; margin: 8px 0 10px; font-variant-numeric: tabular-nums; }
   .fc-roast { font-size: 21px; line-height: 1.35; color: var(--ink-2); max-width: 60ch; }
@@ -215,11 +215,12 @@
   .fc-l i { width: 10px; height: 10px; border-radius: 3px; flex: none; }
   .fc-v { font-size: 27px; font-weight: 700; letter-spacing: -.02em; margin-top: 5px; font-variant-numeric: tabular-nums; white-space: nowrap; }
   .fc-s { font-size: 13.5px; color: var(--ink-3); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .fc-bottom { display: grid; grid-template-columns: minmax(0,1fr); gap: 10px; margin-top: auto; }
-  .fc-box { border: 1px solid var(--line); border-radius: 16px; padding: 13px 15px; min-width: 0; height: 112px; }
+  .fc-bottom { display: grid; grid-template-columns: minmax(0,1fr); gap: 10px; margin-top: 10px; }
+  .fc-box { border: 1px solid var(--line); border-radius: 16px; padding: 13px 15px 15px; min-width: 0; }
   .fc-top { display: flex; align-items: center; gap: 12px; margin-top: 8px; }
   .fc-top .pic { width: 44px; height: 44px; border-radius: 12px; flex: none; object-fit: cover; background: var(--control); display: grid; place-items: center; font-weight: 700; font-size: 22px; color: #fff; }
   .fc-top .pic.btc { background: #f7931a; }
+  .fc-top .pic.ini { background: var(--pink-soft); color: var(--pink-text); }
   .fc-top .t { min-width: 0; font-size: 15.5px; font-weight: 600; line-height: 1.25; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
   .fc-top .f { margin-left: auto; font-size: 22px; font-weight: 700; white-space: nowrap; font-variant-numeric: tabular-nums; }
   .fc-bars { display: block; width: 100%; height: 66px; margin-top: 6px; }
@@ -233,7 +234,7 @@
   .acts .btn { height: 44px; font-size: 14.5px; }
   .acts .btn.soft { height: 44px; padding: 0 16px; font-size: 14px; }
   @media (max-width: 520px) { .acts .btn, .acts .btn.soft { flex: 1 1 calc(50% - 4px); padding: 0 10px; } }
-  main { padding-bottom: 40px; }
+  main.wrap { padding-bottom: 48px; }
 </style>
 <script>
   // Vercel Web Analytics: page views only, no cookies. Skipped on localhost, where /_vercel/insights doesn't exist.
@@ -696,7 +697,7 @@ async function render(p, lists) {
   const top = [...markets.values()].sort((a, b) => b.fee - a.fee)[0];
   const [ava, topPic] = await Promise.all([
     p.profilePictureUrl ? toDataURL(p.profilePictureUrl.replace("_normal.", "_bigger.")).then((d) => d || toDataURL(p.profilePictureUrl)) : "",
-    top && top.pic && !top.pic.includes("placeholder") ? toDataURL(top.pic) : "",
+    top && top.pic && !top.pic.includes("placeholder") ? toDataURL(top.pic).then((d) => d || toDataURL("/api/img?u=" + encodeURIComponent(top.pic))) : "",
   ]);
   const since = first ? first.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" }) : "Aug 12, 2026";
   const logo = document.querySelector(".brand svg").outerHTML;
@@ -722,7 +723,7 @@ async function render(p, lists) {
           ${tile("Biggest fee", "", max ? usd(max) : "–", "one single trade", "1.04")}
         </div>
         <div class="fc-bottom">
-          <div class="fc-box rv" style="--d:1.1s"><div class="fc-l">Paid the most on</div>${top ? `<div class="fc-top">${top.pulse ? `<span class="pic btc">₿</span>` : topPic ? `<img class="pic" src="${topPic}" alt="">` : `<span class="pic"></span>`}<div class="t">${esc(top.title)}</div><div class="f">${usd(top.fee, 2)}</div></div>` : `<div class="fc-s" style="margin-top:12px">No fees yet</div>`}</div>
+          <div class="fc-box rv" style="--d:1.1s"><div class="fc-l">Paid the most on</div>${top ? `<div class="fc-top">${top.pulse ? `<span class="pic btc">₿</span>` : topPic ? `<img class="pic" src="${topPic}" alt="">` : `<span class="pic ini">${esc((top.title.trim()[0] || "?").toUpperCase())}</span>`}<div class="t">${esc(top.title)}</div><div class="f">${usd(top.fee, 2)}</div></div>` : `<div class="fc-s" style="margin-top:12px">No fees yet</div>`}</div>
         </div>
       </div>
     </div>
