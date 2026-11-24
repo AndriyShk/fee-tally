@@ -95,7 +95,8 @@
   .btn svg { width: 16px; height: 16px; }
 
   /* hero */
-  .hero { margin-top: 20px; padding: 28px; display: grid; grid-template-columns: minmax(0,1fr); gap: 24px; position: relative; z-index: 5; }
+  .hero { margin-top: 20px; padding: 28px; display: grid; grid-template-columns: minmax(0,1fr) minmax(0,400px); gap: 32px; align-items: center; position: relative; z-index: 5; }
+  @media (max-width: 900px) { .hero { grid-template-columns: minmax(0,1fr); gap: 18px; } }
   .hero-main { display: grid; gap: 18px; min-width: 0; }
   .mascot { width: 330px; height: auto; aspect-ratio: 1; display: block; overflow: visible; } /* the rooster itself stays still: only his pencil hand and the receipt move */
   /* the pencil hand: an idle tap now and then, fast scribbling while the scan runs */
@@ -148,6 +149,14 @@
 
   /* loading: a receipt feeds out of a printer while the count of rows read climbs */
   .loading { display: flex; align-items: center; gap: 18px; max-width: 560px; padding: 14px 18px 14px 10px; border-radius: 14px; background: var(--control); animation: rise .35s ease-out both; }
+  /* on wide screens the loading panel takes the empty right side of the hero, stacked and centred */
+  @media (min-width: 901px) {
+    .hero > .loading { flex-direction: column; text-align: center; gap: 10px; max-width: none; padding: 26px 24px 24px; align-self: stretch; justify-content: center; }
+    .hero > .loading .printer { width: 104px; height: 104px; }
+    .hero > .loading .ld-text { justify-items: center; }
+    .hero > .loading .ld-count { font-size: 34px; }
+    .hero > .loading .ld-steps { justify-content: center; }
+  }
   .printer { width: 76px; height: 76px; flex: none; }
   .printer .slot { fill: var(--ink); }
   .printer .slot-gap { fill: var(--page); opacity: .5; }
@@ -305,6 +314,8 @@
       </div>
       <button class="btn" id="go" type="submit">Count my fees</button>
     </form>
+    <p class="status" id="status" role="status" aria-live="polite"></p>
+    </div>
     <div class="loading" id="loading" hidden>
       <svg class="printer" viewBox="0 0 80 80" aria-hidden="true">
         <defs><clipPath id="below-slot"><rect x="0" y="22" width="80" height="58"/></clipPath></defs>
@@ -329,8 +340,6 @@
           <span data-k="pulse"><i></i>Pulse</span>
         </div>
       </div>
-    </div>
-    <p class="status" id="status" role="status" aria-live="polite"></p>
     </div>
   </section>
 
