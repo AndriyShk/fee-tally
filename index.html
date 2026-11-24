@@ -895,7 +895,25 @@ async function render(p, lists) {
   $("pLink").href = xoLink(`/profile/${encodeURIComponent(p.username)}`);
   $("res").hidden = false;
   fitStage();
-  $("res").scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" });
+  // bring the card to the middle of the screen; once more after the layout settles (fonts, images, the reveal)
+  requestAnimationFrame(() => centerCard(true));
+  setTimeout(() => centerCard(true), 700);
+}
+
+// centre the card below the sticky top bar (or show its top edge if it's taller than the screen)
+function centerCard(smooth) {
+  const main = document.querySelector("main"); main.style.paddingBottom = "";
+  // layout position (offsetTop ignores the card's rise-in transform, which would skew the maths)
+  const stage = $("stage"), h = stage.offsetHeight;
+  let y = 0; for (let el = stage; el; el = el.offsetParent) y += el.offsetTop;
+  const bar = document.querySelector(".bar").offsetHeight, room = innerHeight - bar;
+  const top = Math.max(0, y - bar - (h < room ? (room - h) / 2 : 12));
+  // a short page can't scroll far enough to centre the card, so give it room underneath
+  const docH = main.getBoundingClientRect().bottom + scrollY; // the content's real height (scrollHeight never drops below the window)
+  const short = top - (docH - innerHeight);
+  if (short > 0) main.style.paddingBottom = parseFloat(getComputedStyle(main).paddingBottom) + short + 2 + "px";
+  if (Math.abs(scrollY - top) < 3) return;
+  scrollTo({ top, behavior: smooth && !matchMedia("(prefers-reduced-motion: reduce)").matches ? "smooth" : "auto" });
 }
 
 // the card is designed at 1200x675 and scaled down to the column
