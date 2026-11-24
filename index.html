@@ -244,6 +244,20 @@
   .fc-top .f { margin-left: auto; font-size: 22px; font-weight: 700; white-space: nowrap; font-variant-numeric: tabular-nums; }
   .fc-bars { display: block; width: 100%; height: 66px; margin-top: 6px; }
   .fc-bars rect { fill: var(--pink); }
+  /* notice panel: same slot as the loading panel (right of the title on wide screens, under the form on phones) */
+  .notice { align-self: stretch; display: flex; flex-direction: column; justify-content: center; gap: 10px; padding: 22px 24px; border-radius: 16px; background: var(--control); animation: rise .35s ease-out both; }
+  .notice .nt-ic { width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center; background: var(--pink-soft); color: var(--pink-text); }
+  .notice .nt-ic svg { width: 22px; height: 22px; }
+  .notice.nt-down .nt-ic { background: var(--neg-soft); color: var(--neg); }
+  .notice .nt-who { display: flex; align-items: center; gap: 8px; font-weight: 600; color: var(--ink-2); font-size: 14px; }
+  .notice .nt-who img { width: 26px; height: 26px; border-radius: 50%; }
+  .notice h3 { font-size: 20px; font-weight: 700; letter-spacing: -.01em; }
+  .notice p { font-size: 14px; color: var(--ink-2); }
+  .notice p b { color: var(--ink); }
+  .notice ol { margin: 0; padding: 0; list-style: none; counter-reset: st; display: grid; gap: 6px; }
+  .notice li { counter-increment: st; display: flex; align-items: center; gap: 10px; font-size: 14px; font-weight: 500; }
+  .notice li::before { content: counter(st); width: 22px; height: 22px; border-radius: 50%; flex: none; display: grid; place-items: center; background: var(--card); font-size: 12px; font-weight: 700; color: var(--pink-text); }
+  .notice .btn { align-self: flex-start; margin-top: 4px; }
   /* card layout: the total on the left, a printed receipt on the right */
   .fc-main { display: grid; grid-template-columns: minmax(0,1fr) 420px; grid-template-rows: auto; align-content: center; gap: 30px; min-height: 0; }
   .fc-body { display: flex; flex-direction: column; justify-content: center; gap: 12px; min-width: 0; }
@@ -331,6 +345,7 @@
     </form>
     <p class="status" id="status" role="status" aria-live="polite"></p>
     </div>
+    <div class="notice" id="notice" hidden role="alert"></div>
     <div class="loading" id="loading" hidden>
       <svg class="printer" viewBox="0 0 80 80" aria-hidden="true">
         <defs><clipPath id="below-slot"><rect x="0" y="22" width="80" height="58"/></clipPath></defs>
@@ -539,18 +554,19 @@ async function run(raw) {
   if (!name) { setStatus("Type an XO username first.", true); input.focus(); return; }
   const id = ++runId;
   $("res").hidden = true; $("go").disabled = true;
+  $("notice").hidden = true;
   startLoading(name);
   tape.reset();
   try {
     let p;
     try { p = await api(`/profiles/${encodeURIComponent(name)}`); }
     catch (e) {
-      if (e.code === 404) throw Object.assign(new Error(), { show: `No XO user called "@${esc(name)}". Check the spelling, or <a href="${xoLink()}" target="_blank" rel="noopener">join XO Market</a>.` });
+      if (e.code === 404) throw Object.assign(new Error(), { notice: { kind: "missing", user: name } });
       throw e;
     }
     if (id !== runId) return;
     const url = new URL(location.href); url.searchParams.set("u", p.username); history.replaceState(null, "", url);
-    if (p.isPrivate) throw Object.assign(new Error(), { show: `@${esc(p.username)} has a private profile, so XO doesn't share its trades. If it's yours, switch the profile to public in XO's settings, check here, and switch it back.` });
+    if (p.isPrivate) throw Object.assign(new Error(), { notice: { kind: "private", user: p.username, ava: p.profilePictureUrl } });
 
     $("ldTitle").textContent = `Reading @${p.username}'s trades`;
     let rows = 0;
@@ -570,8 +586,9 @@ async function run(raw) {
     await render(p, lists);
   } catch (e) {
     if (id !== runId) return;
-    if (!e.show) console.error("fee-tally", e);
-    setStatus(e.show || "Couldn't reach XO right now. Try again in a minute.", true);
+    if (!e.notice) console.error("fee-tally", e);
+    stopLoading();
+    showNotice(e.notice || { kind: "down" });
   } finally {
     if (id === runId) { stopLoading(); $("go").disabled = false; }
   }
@@ -667,6 +684,29 @@ const tape = (() => {
     },
   };
 })();
+
+/* notices (private profile, unknown user, XO unreachable) take the loading panel's place */
+const ICONS = {
+  private: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10.5" width="16" height="10" rx="2.5"/><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"/><circle cx="12" cy="15.5" r="1.4" fill="currentColor"/></svg>',
+  missing: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5 20 20M8.5 8.5l4 4M12.5 8.5l-4 4"/></svg>',
+  down: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v10M7 8l5 5 5-5"/><path d="M4 17h16v3H4z"/></svg>',
+};
+function showNotice(n) {
+  const el = $("notice"), u = n.user ? esc(n.user) : "";
+  const who = n.user ? `<div class="nt-who">${n.ava ? `<img src="${esc(n.ava.replace("_normal.", "_bigger."))}" alt="" referrerpolicy="no-referrer" onerror="this.remove()">` : ""}<span>@${u}</span></div>` : "";
+  const body = {
+    private: `<h3>This profile is private</h3><p>XO only shares trades of public profiles, so there's nothing to count for <b>@${u}</b>.</p>
+      <ol><li>Open your XO profile settings</li><li>Switch the profile to public</li><li>Count your fees here, then switch it back</li></ol>
+      <a class="btn soft" href="${xoLink(`/profile/${encodeURIComponent(n.user)}`)}" target="_blank" rel="noopener">Open XO profile ↗</a>`,
+    missing: `<h3>No XO user by that name</h3><p>There's no <b>@${u}</b> on XO Market. Check the spelling, or pick a name from the suggestions as you type.</p>
+      <a class="btn soft" href="${xoLink()}" target="_blank" rel="noopener">Join XO Market ↗</a>`,
+    down: `<h3>Couldn't reach XO</h3><p>XO's API didn't answer just now. Give it a minute and try again.</p>
+      <button class="btn soft" type="button" onclick="run(input.value)">Try again</button>`,
+  }[n.kind];
+  el.className = "notice nt-" + n.kind;
+  el.innerHTML = `<div class="nt-ic">${ICONS[n.kind]}</div>${who}${body}`;
+  el.hidden = false;
+}
 
 /* loading panel */
 function startLoading(name) {
