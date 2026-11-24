@@ -889,7 +889,7 @@ async function render(p, lists) {
   countUp($("cardBig"), total);
 
   current = p.username;
-  const share = `${SITE}?u=${encodeURIComponent(p.username)}`;
+  const share = location.origin; // the plain site link, no ?u= (everyone counts their own)
   const text = n
     ? `I've paid ${usd(total, 2)} in trading fees on @xomarket 🧾\n\n${int(n)} trades · ${pct(total / vol)} avg fee · biggest single fee ${usd(max)}\n\nHow much have you paid?`
     : `I've paid $0 in trading fees on @xomarket so far 🧾\n\nHow much have you paid?`;
