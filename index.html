@@ -87,7 +87,18 @@
   .btn svg { width: 16px; height: 16px; }
 
   /* hero */
-  .hero { margin-top: 20px; padding: 28px; display: grid; gap: 18px; }
+  .hero { margin-top: 20px; padding: 28px; display: grid; grid-template-columns: minmax(0,1fr) 300px; gap: 24px; align-items: center; overflow: hidden; }
+  .hero-main { display: grid; gap: 18px; min-width: 0; }
+  .hero-art { align-self: stretch; display: grid; place-items: center; }
+  .mascot { width: 300px; height: auto; display: block; transform-origin: 50% 95%; animation: sway 4.2s ease-in-out infinite; }
+  /* at rest the rooster sways a little; while trades are read it trembles; when the total lands it hops */
+  @keyframes sway { 0%, 100% { transform: rotate(-2deg); } 50% { transform: rotate(2deg) translateY(-4px); } }
+  :root[data-loading] .mascot { animation: tremble .18s linear infinite; }
+  @keyframes tremble { 0%, 100% { transform: translate(0, 0) rotate(0); } 25% { transform: translate(-1.5px, .5px) rotate(-.8deg); } 75% { transform: translate(1.5px, -.5px) rotate(.8deg); } }
+  .mascot.hop { animation: hop .7s cubic-bezier(.3,1.6,.5,1), sway 4.2s ease-in-out .7s infinite; }
+  @keyframes hop { 0% { transform: none; } 35% { transform: translateY(-18px) rotate(-4deg); } 70% { transform: translateY(0) scale(1.03, .97); } 100% { transform: none; } }
+  @media (max-width: 860px) { .hero { grid-template-columns: minmax(0,1fr) 220px; } .mascot { width: 220px; } }
+  @media (max-width: 640px) { .hero { grid-template-columns: minmax(0,1fr); } .hero-art { order: -1; margin: -8px 0 -14px; } .mascot { width: 170px; } }
   h1 { font-size: clamp(28px, 4.6vw, 42px); line-height: 1.08; font-weight: 700; letter-spacing: -.02em; text-wrap: balance; max-width: 18ch; }
   h1 em { font-style: normal; color: var(--pink-text); }
   .lede { font-size: 15px; color: var(--ink-2); max-width: 56ch; }
@@ -251,6 +262,7 @@
 
 <main class="wrap">
   <section class="card hero">
+    <div class="hero-main">
     <h1><span class="h-emoji" aria-hidden="true">🧾</span>How much have you paid in <em>fees</em> on XO?</h1>
     <p class="lede">Every trade on XO Market can carry a small trading fee. Enter an XO username and Fee Tally adds them all up: Markets, Convictions and Pulse, week by week.</p>
     <form class="find" id="find" autocomplete="off">
@@ -287,6 +299,8 @@
       </div>
     </div>
     <p class="status" id="status" role="status" aria-live="polite"></p>
+    </div>
+    <div class="hero-art" aria-hidden="true"><img class="mascot" src="mascot/receipt.webp" alt="" width="640" height="640"></div>
   </section>
 
   <div class="res" id="res" hidden>
@@ -495,6 +509,8 @@ async function run(raw) {
     if (id !== runId) return;
     stopLoading();
     render(p, lists);
+    const m = document.querySelector(".mascot");
+    m.classList.remove("hop"); void m.offsetWidth; m.classList.add("hop");
   } catch (e) {
     if (id !== runId) return;
     if (!e.show) console.error("fee-tally", e);
