@@ -206,7 +206,10 @@
     padding: 34px 44px 38px; display: grid; grid-template-rows: auto 1fr; gap: 24px; font-family: "Open Runde", ui-sans-serif, system-ui, sans-serif; }
   .fc-head { display: flex; align-items: center; gap: 14px; }
   .fc-brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 22px; letter-spacing: -.01em; }
-  .fc-brand svg { width: 34px; height: 34px; }
+  .fc-brand svg { width: 44px; height: 44px; }
+  .fc-brand > div > span { display: block; }
+  .fc-brand small { display: block; font-size: 15px; font-weight: 500; color: var(--ink-3); letter-spacing: 0; margin-top: 1px; }
+  .fc-brand small b { color: var(--pink-text); font-weight: 600; }
   .fc-who { margin-left: auto; display: flex; align-items: center; gap: 14px; text-align: right; }
   .fc-who b { display: block; font-size: 24px; font-weight: 700; letter-spacing: -.01em; }
   .fc-who small { display: block; font-size: 15px; color: var(--ink-3); font-weight: 500; }
@@ -242,7 +245,7 @@
   .fc-bars { display: block; width: 100%; height: 66px; margin-top: 6px; }
   .fc-bars rect { fill: var(--pink); }
   /* card layout: the total on the left, a printed receipt on the right */
-  .fc-main { display: grid; grid-template-columns: minmax(0,1fr) 420px; gap: 30px; min-height: 0; }
+  .fc-main { display: grid; grid-template-columns: minmax(0,1fr) 420px; grid-template-rows: auto; align-content: center; gap: 30px; min-height: 0; }
   .fc-body { display: flex; flex-direction: column; justify-content: center; gap: 12px; min-width: 0; }
   .fc-lead { display: flex; flex-direction: column; }
   .fc-stats { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 12px; margin-top: 24px; }
@@ -270,6 +273,15 @@
   .r-thanks { margin-top: auto; text-align: center; font-weight: 700; letter-spacing: .12em; font-size: 14px; }
   .r-bars { margin-top: 12px; height: 28px; background: repeating-linear-gradient(90deg, #17181c 0 2px, transparent 2px 5px, #17181c 5px 6px, transparent 6px 9px, #17181c 9px 12px, transparent 12px 14px); opacity: .85; }
   .r-url { text-align: center; font-size: 12.5px; color: #5c5f66; margin-top: 8px; }
+  /* right column: one block per section, filling the height */
+  .fc-cats { display: grid; grid-template-rows: repeat(4, minmax(0,1fr)); gap: 10px; min-height: 0; }
+  .fc-cat { border: 1px solid var(--line); border-radius: 16px; padding: 12px 16px; display: grid; grid-template-columns: minmax(0,1fr) auto; grid-template-rows: auto auto auto; column-gap: 10px; row-gap: 3px; align-content: center; min-height: 0; }
+  .fc-cat .cl { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); }
+  .fc-cat .cl i { width: 10px; height: 10px; border-radius: 3px; flex: none; }
+  .fc-cat .cv { grid-row: 1 / span 2; grid-column: 2; align-self: center; font-size: 30px; font-weight: 700; letter-spacing: -.02em; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .fc-cat .cs { font-size: 14px; color: var(--ink-2); }
+  .fc-cat .cb { grid-column: 1 / -1; height: 6px; border-radius: 4px; background: var(--control); overflow: hidden; margin-top: 10px; }
+  .fc-cat .cb b { display: block; height: 100%; border-radius: 4px; }
   /* reveal: the parts of the card rise in one after another; the total counts up */
   .fcard .rv { animation: rise .55s cubic-bezier(.2,.8,.2,1) both; animation-delay: var(--d, 0s); }
   .fcard .fc-bars rect { transform-box: fill-box; transform-origin: 50% 100%; animation: grow .5s cubic-bezier(.2,.8,.2,1) both; }
@@ -787,13 +799,13 @@ async function render(p, lists) {
   const host = location.host || "fee-tally.vercel.app";
   $("stage").innerHTML = `<div class="fcard" id="card">
     <div class="fc-head">
-      <div class="fc-brand">${logo}<span>Fee Tally</span></div>
+      <div class="fc-brand">${logo}<div><span>Fee Tally</span><small>get yours → <b>${esc(host)}</b></small></div></div>
       <div class="fc-who"><div><b>@${esc(p.username)}</b><small>Trading fees on XO Market</small></div>${ava ? `<img class="fc-ava" src="${ava}" alt="">` : `<span class="fc-ava">${esc((p.username[0] || "?").toUpperCase())}</span>`}</div>
     </div>
     <div class="fc-main">
       <div class="fc-body">
         <div class="fc-lead">
-          <div class="fc-kick rv" style="--d:.15s">Total fees paid on XO</div>
+          <div class="fc-kick rv" style="--d:.15s">Total fees paid on XO · since ${since}</div>
           <div class="fc-big rv" style="--d:.25s" id="cardBig">${usd(total, 2)}</div>
           <div class="fc-roast rv" style="--d:.5s">${esc(roast(total, n))}</div>
           <div class="fc-stats">
@@ -804,17 +816,15 @@ async function render(p, lists) {
         </div>
         <div class="fc-box rv" style="--d:.9s"><div class="fc-l">Paid the most on</div>${top ? `<div class="fc-top">${top.pulse ? `<span class="pic btc">₿</span>` : topPic ? `<img class="pic" src="${topPic}" alt="">` : `<span class="pic ini">${esc((top.title.trim()[0] || "?").toUpperCase())}</span>`}<div class="tt"><div class="t">${esc(top.title)}</div><div class="ts">${Math.round((top.fee / total) * 100)}% of all your fees · ${int(top.n)} trade${top.n === 1 ? "" : "s"}</div></div><div class="f">${usd(top.fee, 2)}</div></div>` : `<div class="fc-s" style="margin-top:12px">No fees yet</div>`}</div>
       </div>
-      <div class="fc-side">
-        <div class="rcpt rv" style="--d:.4s;clip-path:${zigzag()}">
-          <div class="r-head">FEE RECEIPT</div>
-          <div class="r-sub">since ${since}</div>
-          <div class="r-cut"></div>
-          ${per.map((s) => `<div class="r-row"><span><i style="background:${s.color}"></i><span>${s.name.toUpperCase()}<em>${int(s.n)} trade${s.n === 1 ? "" : "s"}</em></span></span><b>${usd(s.fee, 2)}</b></div>`).join("")}
-          <div class="r-row"><span><i style="background:#17181c"></i><span>BIGGEST FEE<em>a single trade</em></span></span><b>${max ? usd(max) : "–"}</b></div>
-          <div class="r-cut dbl"></div>
-          <div class="r-thanks">* THANK YOU FOR TRADING *</div>
-          <div class="r-bars"></div>
-          <div class="r-url">get yours → ${esc(host)}</div>
+      <div class="fc-cats">
+        ${per.map((s, i) => { const sh = total ? s.fee / total : 0; return `<div class="fc-cat rv" style="--d:${(0.4 + i * 0.07).toFixed(2)}s">
+          <div class="cl"><i style="background:${s.color}"></i>${s.name}</div><div class="cv">${usd(s.fee, 2)}</div>
+          <div class="cs">${int(s.n)} trade${s.n === 1 ? "" : "s"} · ${Math.round(sh * 100)}% of fees</div>
+          <div class="cb"><b style="width:${(sh * 100).toFixed(1)}%;background:${s.color}"></b></div>
+        </div>`; }).join("")}
+        <div class="fc-cat rv" style="--d:.61s">
+          <div class="cl"><i style="background:var(--ink-3)"></i>Biggest fee</div><div class="cv">${max ? usd(max) : "–"}</div>
+          <div class="cs">on a single trade</div>
         </div>
       </div>
     </div>
