@@ -92,14 +92,14 @@
   .hero-art { align-self: stretch; display: grid; place-items: center; }
   .mascot { width: 330px; height: auto; aspect-ratio: 1; display: block; overflow: visible; } /* the rooster itself stays still: only his pencil hand and the receipt move */
   /* the pencil hand: an idle tap now and then, fast scribbling while the scan runs */
-  .mascot .hand { transform-box: view-box; transform-origin: 735px 524px; animation: tap 3.2s ease-in-out infinite; }
+  .mascot .hand { transform-box: view-box; transform-origin: 720px 350px; animation: tap 3.2s ease-in-out infinite; }
   @keyframes tap { 0%, 70%, 100% { transform: none; } 76% { transform: rotate(-6deg); } 82% { transform: rotate(2deg); } 88% { transform: rotate(-4deg); } 94% { transform: none; } }
   :root[data-loading] .mascot .hand { animation: scribble .34s ease-in-out infinite alternate; }
   @keyframes scribble { 0% { transform: rotate(-8deg) translate(-3px, 2px); } 50% { transform: rotate(1deg) translate(3px, -2px); } 100% { transform: rotate(-4deg) translate(-1px, 4px); } }
   .mascot .ribbon { fill: #fff; }
-  .mascot .edge { fill: none; stroke: #111; stroke-width: 7; stroke-linejoin: round; stroke-linecap: round; }
-  .mascot .ink { stroke: #6f6f6f; stroke-width: 6; stroke-linecap: round; fill: none; }
-  .mascot .fold { fill: #fff; stroke: #111; stroke-width: 7; stroke-linejoin: round; transform-box: fill-box; transform-origin: 50% 100%; animation: fold .35s cubic-bezier(.2,1.6,.4,1) both; }
+  .mascot .edge { fill: none; stroke: #111; stroke-width: 6; stroke-linejoin: round; stroke-linecap: round; }
+  .mascot .ink { stroke: #3d3d5c; stroke-width: 3.5; stroke-linecap: round; stroke-linejoin: round; fill: none; }
+  .mascot .fold { fill: #fff; stroke: #111; stroke-width: 6; stroke-linejoin: round; transform-box: fill-box; transform-origin: 50% 100%; animation: fold .35s cubic-bezier(.2,1.6,.4,1) both; }
   @keyframes fold { from { transform: scale(.6, .2); opacity: 0; } to { transform: none; opacity: 1; } }
   @media (max-width: 860px) { .hero { grid-template-columns: minmax(0,1fr) 240px; } .mascot { width: 240px; } }
   @media (max-width: 640px) { .hero { grid-template-columns: minmax(0,1fr); } .hero-art { order: -1; margin: -14px 0 -14px; } .mascot { width: 200px; } }
@@ -313,14 +313,13 @@
     </div>
     <div class="hero-art" aria-hidden="true">
       <!-- the accountant: the base picture minus his pencil hand, the receipt tape drawn on top (it grows with the scan), then the hand on its own so it can write -->
-      <svg class="mascot" viewBox="0 0 1024 1024">
+      <svg class="mascot" viewBox="-20 -24 1064 1056">
         <defs>
-          <clipPath id="noHand"><path clip-rule="evenodd" transform="translate(72 144) scale(.859375)" d="M-84 -168H1108V1024H-84Z M685 222 L872 222 L872 432 L792 442 L752 442 L752 379 L712 376 L685 300 Z"/></clipPath>
-          <clipPath id="handOnly"><path transform="translate(72 144) scale(.859375)" d="M682 219 L875 219 L875 435 L793 445 L749 445 L749 380 L712 378 L682 300 Z"/></clipPath>
+          <clipPath id="noHand"><path clip-rule="evenodd" d="M-40 -40H1064V1064H-40Z M640 178 L782 178 L782 342 L748 350 L690 350 L622 338 L640 300 Z"/></clipPath>
+          <clipPath id="handOnly"><path d="M637 175 L785 175 L785 345 L749 353 L689 353 L619 340 L637 299 Z"/></clipPath>
         </defs>
         <image href="mascot/accountant.webp" width="1024" height="1024" clip-path="url(#noHand)"/>
-        <!-- tape and pile are laid out in the picture's earlier 1024 px frame; the picture was shrunk into this one to fit the whole comb -->
-        <g transform="translate(72 144) scale(.859375)"><g id="pile"></g><g id="tape"></g></g>
+        <g id="pile"></g><g id="tape"></g>
         <g class="hand"><image href="mascot/accountant.webp" width="1024" height="1024" clip-path="url(#handOnly)"/></g>
       </svg>
     </div>
@@ -588,8 +587,8 @@ const tape = (() => {
   const NS = "http://www.w3.org/2000/svg";
   const g = document.getElementById("tape"), pileG = document.getElementById("pile");
   // the sheet's bottom edge in the picture (1024 px space) and the curve the tape follows down to the floor
-  const L = [612, 655], R = [756, 632], W = Math.hypot(R[0] - L[0], R[1] - L[1]);
-  const P0 = [(L[0] + R[0]) / 2, (L[1] + R[1]) / 2], P1 = [700, 850], P2 = [850, 830], P3 = [884, 962];
+  const L = [642, 578], R = [722, 575], W = Math.hypot(R[0] - L[0], R[1] - L[1]);
+  const P0 = [(L[0] + R[0]) / 2, (L[1] + R[1]) / 2], P1 = [690, 720], P2 = [790, 750], P3 = [800, 972];
   const bez = (t) => {
     const u = 1 - t;
     return [0, 1].map((k) => u * u * u * P0[k] + 3 * u * u * t * P1[k] + 3 * u * t * t * P2[k] + t * t * t * P3[k]);
@@ -607,7 +606,7 @@ const tape = (() => {
   // at the very top the tape must line up with the sheet's edge
   const e = [(R[0] - L[0]) / W, (R[1] - L[1]) / W];
   pts.forEach((o) => { const k = Math.max(0, 1 - o.s / 60); if (k > 0) { const nx = o.n[0] * (1 - k) + e[0] * k, ny = o.n[1] * (1 - k) + e[1] * k, m = Math.hypot(nx, ny); o.n = [nx / m, ny / m]; } });
-  const FOLD = 120, MAXF = 9, U0 = 34, UMAX = H + FOLD * MAXF;
+  const FOLD = 110, MAXF = 9, U0 = 34, UMAX = H + FOLD * MAXF;
   let seed = 7; const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
   const inkLen = Array.from({ length: 80 }, () => [0.55 + rnd() * 0.3, rnd() * 0.12]);
   const at = (s) => { const i = Math.min(pts.length - 1, Math.round(s / STEP)); return pts[i]; };
@@ -620,16 +619,18 @@ const tape = (() => {
     if (list.length < 2) list.push(at(len));
     const end = list[list.length - 1], left = list.map((o) => off(o, -W / 2)), right = list.map((o) => off(o, W / 2));
     // start a little above the sheet's bottom edge so sheet and tape read as one strip of paper
-    left.unshift(off(pts[0], -W / 2 + 3, -10)); right.unshift(off(pts[0], W / 2 - 3, -10));
+    left.unshift(off(pts[0], -W / 2 + 2, -14)); right.unshift(off(pts[0], W / 2 - 2, -14)); // covers the slip's torn edge
     // a torn end while it is still hanging, a clean one once it lies in the pile
     const tear = [];
-    if (len < H) for (let i = 0; i <= 8; i++) tear.push(off(end, W / 2 - (W * i) / 8, i % 2 ? 9 : 0));
+    if (len < H) for (let i = 0; i <= 8; i++) tear.push(off(end, W / 2 - (W * i) / 8, i % 2 ? 6 : 0));
     else tear.push(off(end, W / 2), off(end, -W / 2));
     let ink = "";
-    for (let s = 16, k = 0; s < len - 10; s += 26, k++) {
-      const o = at(s), [l, sh] = inkLen[k % inkLen.length], half = W / 2 - 18;
-      const a = off(o, -half + sh * W), b = off(o, -half + sh * W + l * (W - 36) * (1 - sh));
-      ink += `M${f1(a[0])} ${f1(a[1])}L${f1(b[0])} ${f1(b[1])}`;
+    // wavy hand-written rows like the ones on the slip
+    for (let s = 12, k = 0; s < len - 8; s += 19, k++) {
+      const o = at(s), [l, sh] = inkLen[k % inkLen.length], half = W / 2 - 13, from = -half + sh * W * 0.5, span = l * (2 * half) * (1 - sh * 0.5);
+      let d = "";
+      for (let j = 0; j <= 6; j++) { const q = off(o, from + (span * j) / 6, j % 2 ? -2.2 : 2.2); d += (j ? "L" : "M") + f1(q[0]) + " " + f1(q[1]); }
+      ink += d;
     }
     g.innerHTML =
       `<path class="ribbon" d="${pathOf([...left, ...(len < H ? tear.slice().reverse() : [off(end, -W / 2), off(end, W / 2)]), ...right.slice().reverse()])}Z"/>` +
@@ -639,10 +640,10 @@ const tape = (() => {
     // folds on the floor, one per FOLD of extra length
     const want = u > H ? Math.min(MAXF, Math.floor((u - H) / FOLD) + 1) : 0;
     while (folds < want) {
-      const i = folds++, y = 992 - i * 30, x = 884 + (i % 2 ? 9 : -9), w = 196, h = 40;
+      const i = folds++, y = 1000 - i * 21, x = 852 + (i % 2 ? 6 : -6), w = 128, h = 28;
       const el = document.createElementNS(NS, "g");
       el.innerHTML = `<rect class="fold" x="${x - w / 2}" y="${y - h}" width="${w}" height="${h}" rx="18"/>` +
-        `<path class="ink" d="M${x - 62} ${y - 20}H${x + 30 - (i % 3) * 14}"/>`;
+        `<path class="ink" d="M${x - 40} ${y - 14}H${x + 22 - (i % 3) * 10}"/>`;
       pileG.appendChild(el);
     }
     while (folds > want) { pileG.lastChild?.remove(); folds--; }
