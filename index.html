@@ -87,12 +87,12 @@
   .btn svg { width: 16px; height: 16px; }
 
   /* hero */
-  .hero { margin-top: 20px; padding: 28px; display: grid; grid-template-columns: minmax(0,1fr) 300px; gap: 24px; align-items: center; overflow: hidden; }
+  .hero { margin-top: 20px; padding: 28px; display: grid; grid-template-columns: minmax(0,1fr) 330px; gap: 24px; align-items: center; overflow: hidden; }
   .hero-main { display: grid; gap: 18px; min-width: 0; }
   .hero-art { align-self: stretch; display: grid; place-items: center; }
-  .mascot { width: 300px; height: auto; aspect-ratio: 1; display: block; overflow: visible; transform-origin: 50% 95%; animation: sway 4.2s ease-in-out infinite; }
+  .mascot { width: 330px; height: auto; aspect-ratio: 1; display: block; overflow: visible; } /* the rooster itself stays still: only his pencil hand and the receipt move */
   /* the pencil hand: an idle tap now and then, fast scribbling while the scan runs */
-  .mascot .hand { transform-box: view-box; transform-origin: 772px 442px; animation: tap 3.2s ease-in-out infinite; }
+  .mascot .hand { transform-box: view-box; transform-origin: 735px 524px; animation: tap 3.2s ease-in-out infinite; }
   @keyframes tap { 0%, 70%, 100% { transform: none; } 76% { transform: rotate(-6deg); } 82% { transform: rotate(2deg); } 88% { transform: rotate(-4deg); } 94% { transform: none; } }
   :root[data-loading] .mascot .hand { animation: scribble .34s ease-in-out infinite alternate; }
   @keyframes scribble { 0% { transform: rotate(-8deg) translate(-3px, 2px); } 50% { transform: rotate(1deg) translate(3px, -2px); } 100% { transform: rotate(-4deg) translate(-1px, 4px); } }
@@ -101,14 +101,8 @@
   .mascot .ink { stroke: #6f6f6f; stroke-width: 6; stroke-linecap: round; fill: none; }
   .mascot .fold { fill: #fff; stroke: #111; stroke-width: 7; stroke-linejoin: round; transform-box: fill-box; transform-origin: 50% 100%; animation: fold .35s cubic-bezier(.2,1.6,.4,1) both; }
   @keyframes fold { from { transform: scale(.6, .2); opacity: 0; } to { transform: none; opacity: 1; } }
-  /* at rest the rooster sways a little; while trades are read it trembles; when the total lands it hops */
-  @keyframes sway { 0%, 100% { transform: rotate(-2deg); } 50% { transform: rotate(2deg) translateY(-4px); } }
-  :root[data-loading] .mascot { animation: bob .9s ease-in-out infinite; }
-  @keyframes bob { 0%, 100% { transform: none; } 50% { transform: translateY(-3px) rotate(-.6deg); } }
-  .mascot.hop { animation: hop .7s cubic-bezier(.3,1.6,.5,1), sway 4.2s ease-in-out .7s infinite; }
-  @keyframes hop { 0% { transform: none; } 35% { transform: translateY(-18px) rotate(-4deg); } 70% { transform: translateY(0) scale(1.03, .97); } 100% { transform: none; } }
-  @media (max-width: 860px) { .hero { grid-template-columns: minmax(0,1fr) 220px; } .mascot { width: 220px; } }
-  @media (max-width: 640px) { .hero { grid-template-columns: minmax(0,1fr); } .hero-art { order: -1; margin: -8px 0 -14px; } .mascot { width: 170px; } }
+  @media (max-width: 860px) { .hero { grid-template-columns: minmax(0,1fr) 240px; } .mascot { width: 240px; } }
+  @media (max-width: 640px) { .hero { grid-template-columns: minmax(0,1fr); } .hero-art { order: -1; margin: -14px 0 -14px; } .mascot { width: 200px; } }
   h1 { font-size: clamp(28px, 4.6vw, 42px); line-height: 1.08; font-weight: 700; letter-spacing: -.02em; text-wrap: balance; max-width: 18ch; }
   h1 em { font-style: normal; color: var(--pink-text); }
   .lede { font-size: 15px; color: var(--ink-2); max-width: 56ch; }
@@ -314,12 +308,12 @@
       <!-- the accountant: the base picture minus his pencil hand, the receipt tape drawn on top (it grows with the scan), then the hand on its own so it can write -->
       <svg class="mascot" viewBox="0 0 1024 1024">
         <defs>
-          <clipPath id="noHand"><path clip-rule="evenodd" d="M0 0H1024V1024H0Z M685 222 L872 222 L872 432 L792 442 L752 442 L752 379 L712 376 L685 300 Z"/></clipPath>
-          <clipPath id="handOnly"><path d="M682 219 L875 219 L875 435 L793 445 L749 445 L749 382 L712 379 L682 300 Z"/></clipPath>
+          <clipPath id="noHand"><path clip-rule="evenodd" transform="translate(72 144) scale(.859375)" d="M-84 -168H1108V1024H-84Z M685 222 L872 222 L872 432 L792 442 L752 442 L752 379 L712 376 L685 300 Z"/></clipPath>
+          <clipPath id="handOnly"><path transform="translate(72 144) scale(.859375)" d="M682 219 L875 219 L875 435 L793 445 L749 445 L749 380 L712 378 L682 300 Z"/></clipPath>
         </defs>
         <image href="mascot/accountant.webp" width="1024" height="1024" clip-path="url(#noHand)"/>
-        <g id="pile"></g>
-        <g id="tape"></g>
+        <!-- tape and pile are laid out in the picture's earlier 1024 px frame; the picture was shrunk into this one to fit the whole comb -->
+        <g transform="translate(72 144) scale(.859375)"><g id="pile"></g><g id="tape"></g></g>
         <g class="hand"><image href="mascot/accountant.webp" width="1024" height="1024" clip-path="url(#handOnly)"/></g>
       </svg>
     </div>
@@ -536,8 +530,6 @@ async function run(raw) {
     tape.progress(rows, Math.max(rows, 1));
     stopLoading();
     render(p, lists);
-    const m = document.querySelector(".mascot");
-    m.classList.remove("hop"); void m.offsetWidth; m.classList.add("hop");
   } catch (e) {
     if (id !== runId) return;
     if (!e.show) console.error("fee-tally", e);
