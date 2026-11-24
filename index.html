@@ -103,9 +103,67 @@
   .status:empty { display: none; }
   .status.err { color: var(--neg); }
   .status a { color: var(--pink-text); font-weight: 600; }
-  .prog { height: 4px; border-radius: 4px; background: var(--control); overflow: hidden; max-width: 560px; }
-  .prog i { display: block; height: 100%; width: 30%; border-radius: 4px; background: var(--pink); animation: slide 1.1s ease-in-out infinite; }
-  @keyframes slide { from { transform: translateX(-100%); } to { transform: translateX(340%); } }
+  /* ---------- motion ---------- */
+  /* the logo prints its lines one after another, a slow loop at rest and a fast one while trades are read */
+  :root { --cyc: 3.6s; }
+  :root[data-loading] { --cyc: 1.1s; }
+  .brand svg { transform-origin: 50% 70%; }
+  .brand .ln { stroke-dasharray: 100; stroke-dashoffset: 100; animation: ink var(--cyc) linear infinite; } /* drawn over faint copies, so the logo is never blank */
+  .brand .l2 { animation-delay: calc(var(--cyc) * .12); }
+  .brand .l3 { animation-delay: calc(var(--cyc) * .24); }
+  @keyframes ink { 0% { stroke-dashoffset: 100; opacity: 1; } 22% { stroke-dashoffset: 0; } 82% { stroke-dashoffset: 0; opacity: 1; } 100% { stroke-dashoffset: 0; opacity: 0; } }
+  :root[data-loading] .brand svg { animation: chug .55s ease-in-out infinite; }
+  @keyframes chug { 0%, 100% { transform: translateY(0) rotate(0); } 50% { transform: translateY(-1.5px) rotate(-3deg); } }
+  /* the emoji in front of the title: tilted, with a slow nod (as on Pulse Board) */
+  .h-emoji { display: inline-block; margin-right: .22em; transform: rotate(-10deg); transform-origin: 50% 85%; animation: h-emoji 3.4s ease-in-out infinite; }
+  @keyframes h-emoji { 0%, 100% { transform: rotate(-10deg) translateY(0); } 50% { transform: rotate(6deg) translateY(-3px); } }
+
+  /* loading: a receipt feeds out of a printer while the count of rows read climbs */
+  .loading { display: flex; align-items: center; gap: 18px; max-width: 560px; padding: 14px 18px 14px 10px; border-radius: 14px; background: var(--control); animation: rise .35s ease-out both; }
+  .printer { width: 76px; height: 76px; flex: none; }
+  .printer .slot { fill: var(--ink); }
+  .printer .slot-gap { fill: var(--page); opacity: .5; }
+  .printer .slip { fill: var(--card); stroke: var(--line); stroke-width: 1.5; }
+  .printer .pl { stroke: var(--pink); stroke-width: 4; stroke-linecap: round; fill: none; stroke-dasharray: 100; }
+  .printer .pd { font: 700 13px "Open Runde", sans-serif; fill: var(--pink-text); opacity: 0; }
+  .printer .feed { animation: feed 1.4s cubic-bezier(.45,0,.3,1) infinite; }
+  .printer .p1 { animation: pline 1.4s linear infinite; }
+  .printer .p2 { animation: pline 1.4s linear infinite; animation-delay: .14s; }
+  .printer .p3 { animation: pline 1.4s linear infinite; animation-delay: .28s; }
+  .printer .pd { animation: pdollar 1.4s ease-out infinite; }
+  @keyframes feed { 0% { transform: translateY(-46px); } 62% { transform: translateY(0); } 86% { transform: translateY(0); opacity: 1; } 100% { transform: translateY(14px); opacity: 0; } }
+  @keyframes pline { 0%, 18% { stroke-dashoffset: 100; } 52%, 100% { stroke-dashoffset: 0; } }
+  .printer .pd { transform-box: fill-box; transform-origin: center; }
+  @keyframes pdollar { 0%, 55% { opacity: 0; transform: scale(.4); } 68% { opacity: 1; transform: scale(1.25); } 80%, 100% { opacity: 1; transform: scale(1); } }
+  .ld-text { min-width: 0; display: grid; gap: 4px; }
+  .ld-title { font-weight: 600; font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .ld-count { font-size: 26px; font-weight: 700; letter-spacing: -.02em; line-height: 1.1; }
+  .ld-count small { font-size: 13px; font-weight: 500; color: var(--ink-3); letter-spacing: 0; }
+  .ld-count span { display: inline-block; }
+  .ld-count span.bump { animation: bump .25s ease-out; }
+  @keyframes bump { 0% { transform: translateY(3px); opacity: .5; } 100% { transform: none; opacity: 1; } }
+  .ld-steps { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 2px; }
+  .ld-steps span { display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 9px; border-radius: 7px; background: var(--card); font-size: 12px; font-weight: 600; color: var(--ink-3); transition: color .2s, background .2s; }
+  .ld-steps i { width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--line); border-top-color: var(--pink); animation: spin .8s linear infinite; flex: none; }
+  .ld-steps span.done { color: var(--ink); background: var(--pink-soft); }
+  .ld-steps span.done i { border: 0; animation: pop .45s cubic-bezier(.2,1.6,.4,1); background: var(--pink) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M3 6.2l2 2 4-4.4' fill='none' stroke='%237a1230' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center / 12px no-repeat; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @keyframes pop { from { transform: scale(.3); } to { transform: none; } }
+  @media (max-width: 520px) { .loading { gap: 12px; } .printer { width: 64px; height: 64px; } }
+
+  /* results come in one card after another */
+  .res.in > :not(.split) { animation: rise .5s cubic-bezier(.2,.8,.2,1) both; animation-delay: calc(var(--i, 0) * 70ms); }
+  .split.in > * { animation: rise .5s cubic-bezier(.2,.8,.2,1) both; animation-delay: calc(200ms + var(--i, 0) * 70ms); }
+  @keyframes rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+  .share-bar i { transition: width .9s cubic-bezier(.2,.8,.2,1) .45s; }
+  .chart svg.anim .bar-r { transform-box: fill-box; transform-origin: 50% 100%; animation: grow .6s cubic-bezier(.2,.8,.2,1) both; }
+  @keyframes grow { from { transform: scaleY(0); } to { transform: none; } }
+  .big.done { animation: land .5s cubic-bezier(.2,1.6,.4,1); }
+  @keyframes land { 0% { transform: scale(1); } 40% { transform: scale(1.04); } 100% { transform: none; } }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+    .brand .ln, .printer .pl { stroke-dashoffset: 0 !important; }
+  }
   @media (max-width: 520px) { .hero { padding: 20px; } form.find { flex-direction: column; } }
 
   /* results */
@@ -166,8 +224,7 @@
 
   .note { padding: 16px 20px; font-size: 13px; color: var(--ink-2); display: grid; gap: 6px; }
   .note b { color: var(--ink); }
-  footer { margin: 28px 0 40px; font-size: 12.5px; color: var(--ink-3); display: flex; gap: 8px 16px; flex-wrap: wrap; }
-  footer a { color: var(--ink-2); }
+  main { padding-bottom: 40px; }
 </style>
 <script>
   // Vercel Web Analytics: page views only, no cookies. Skipped on localhost, where /_vercel/insights doesn't exist.
@@ -181,7 +238,7 @@
 <header class="bar">
   <div class="wrap">
     <a class="brand" href="./">
-      <svg viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="16" fill="#ff87a6"/><path d="M20 14h24v36l-4-3-4 3-4-3-4 3-4-3-4 3z" fill="#fff"/><path d="M26 25h12M26 32h12M26 39h7" stroke="#7a1230" stroke-width="3.5" stroke-linecap="round"/></svg>
+      <svg viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="16" fill="#ff87a6"/><g class="paper"><path d="M20 14h24v36l-4-3-4 3-4-3-4 3-4-3-4 3z" fill="#fff"/><path d="M26 25h12M26 32h12M26 39h7" stroke="#7a1230" stroke-opacity=".22" stroke-width="3.5" stroke-linecap="round"/><path class="ln l1" pathLength="100" d="M26 25h12" stroke="#7a1230" stroke-width="3.5" stroke-linecap="round"/><path class="ln l2" pathLength="100" d="M26 32h12" stroke="#7a1230" stroke-width="3.5" stroke-linecap="round"/><path class="ln l3" pathLength="100" d="M26 39h7" stroke="#7a1230" stroke-width="3.5" stroke-linecap="round"/></g></svg>
       <span>Fee Tally</span>
     </a>
     <span class="sp"></span>
@@ -194,7 +251,7 @@
 
 <main class="wrap">
   <section class="card hero">
-    <h1>How much have you paid in <em>fees</em> on XO?</h1>
+    <h1><span class="h-emoji" aria-hidden="true">🧾</span>How much have you paid in <em>fees</em> on XO?</h1>
     <p class="lede">Every trade on XO Market can carry a small trading fee. Enter an XO username and Fee Tally adds them all up: Markets, Convictions and Pulse, week by week.</p>
     <form class="find" id="find" autocomplete="off">
       <div class="field">
@@ -204,7 +261,31 @@
       </div>
       <button class="btn" id="go" type="submit">Count my fees</button>
     </form>
-    <div class="prog" id="prog" hidden><i></i></div>
+    <div class="loading" id="loading" hidden>
+      <svg class="printer" viewBox="0 0 80 80" aria-hidden="true">
+        <defs><clipPath id="below-slot"><rect x="0" y="22" width="80" height="58"/></clipPath></defs>
+        <g clip-path="url(#below-slot)">
+          <g class="feed">
+            <path d="M22 0h36v60l-4.5-3.5-4.5 3.5-4.5-3.5-4.5 3.5-4.5-3.5-4.5 3.5-4.5-3.5-4.5 3.5z" class="slip"/>
+            <path class="pl p1" pathLength="100" d="M29 30h22"/>
+            <path class="pl p2" pathLength="100" d="M29 38h22"/>
+            <path class="pl p3" pathLength="100" d="M29 46h12"/>
+            <text class="pd" x="51" y="49" text-anchor="end">$</text>
+          </g>
+        </g>
+        <rect x="10" y="14" width="60" height="12" rx="6" class="slot"/>
+        <rect x="18" y="19" width="44" height="3" rx="1.5" class="slot-gap"/>
+      </svg>
+      <div class="ld-text">
+        <div class="ld-title" id="ldTitle">Reading trades</div>
+        <div class="ld-count num"><span id="ldCount">0</span> <small>rows read</small></div>
+        <div class="ld-steps" id="ldSteps">
+          <span data-k="markets"><i></i>Markets</span>
+          <span data-k="conv"><i></i>Convictions</span>
+          <span data-k="pulse"><i></i>Pulse</span>
+        </div>
+      </div>
+    </div>
     <p class="status" id="status" role="status" aria-live="polite"></p>
   </section>
 
@@ -260,11 +341,6 @@
     </section>
   </div>
 
-  <footer>
-    <span>Community-made. Not affiliated with XO Market.</span>
-    <span>Data: XO public API, read live in your browser.</span>
-    <a id="xoFoot" href="#" target="_blank" rel="noopener">Trade on XO Market</a>
-  </footer>
 </main>
 
 <script>
@@ -288,7 +364,6 @@ const pct = (v) => (v * 100).toFixed(2) + "%";
 const fmtDate = (d) => d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" });
 
 $("xoTop").href = xoLink();
-$("xoFoot").href = xoLink();
 
 /* theme */
 const themeKey = "fee-tally-theme";
@@ -397,8 +472,8 @@ async function run(raw) {
   const name = String(raw || "").trim().replace(/^@/, "").replace(/^https?:\/\/[^/]+\/profile\//, "").replace(/[/?#].*$/, "");
   if (!name) { setStatus("Type an XO username first.", true); input.focus(); return; }
   const id = ++runId;
-  $("res").hidden = true; $("prog").hidden = false; $("go").disabled = true;
-  setStatus(`Looking up @${esc(name)}…`);
+  $("res").hidden = true; $("go").disabled = true;
+  startLoading(name);
   try {
     let p;
     try { p = await api(`/profiles/${encodeURIComponent(name)}`); }
@@ -410,19 +485,55 @@ async function run(raw) {
     const url = new URL(location.href); url.searchParams.set("u", p.username); history.replaceState(null, "", url);
     if (p.isPrivate) throw Object.assign(new Error(), { show: `@${esc(p.username)} has a private profile, so XO doesn't share its trades. If it's yours, switch the profile to public in XO's settings, check here, and switch it back.` });
 
+    $("ldTitle").textContent = `Reading @${p.username}'s trades`;
     let rows = 0;
-    const tick = (n) => { rows += n; if (id === runId) setStatus(`Reading @${esc(p.username)}'s trades… ${int(rows)} so far`); };
-    const lists = await Promise.all(SCOPES.map((s) => allActivities(p.username, s, tick)));
+    const tick = (n) => { rows += n; if (id === runId) setCount(rows); };
+    const lists = await Promise.all(SCOPES.map((s) => allActivities(p.username, s, tick).then((list) => {
+      if (id === runId) $("ldSteps").querySelector(`[data-k="${s.key}"]`).classList.add("done");
+      return list;
+    })));
     if (id !== runId) return;
+    stopLoading();
     render(p, lists);
-    setStatus("");
   } catch (e) {
     if (id !== runId) return;
     if (!e.show) console.error("fee-tally", e);
     setStatus(e.show || "Couldn't reach XO right now. Try again in a minute.", true);
   } finally {
-    if (id === runId) { $("prog").hidden = true; $("go").disabled = false; }
+    if (id === runId) { stopLoading(); $("go").disabled = false; }
   }
+}
+
+/* loading panel */
+function startLoading(name) {
+  setStatus("");
+  $("ldTitle").textContent = `Looking up @${name}`;
+  $("ldCount").textContent = "0";
+  $("ldSteps").querySelectorAll("span").forEach((s) => s.classList.remove("done"));
+  $("loading").hidden = false;
+  document.documentElement.dataset.loading = "";
+}
+function stopLoading() {
+  $("loading").hidden = true;
+  delete document.documentElement.dataset.loading;
+}
+function setCount(n) {
+  const el = $("ldCount");
+  el.textContent = int(n);
+  el.classList.remove("bump"); void el.offsetWidth; el.classList.add("bump");
+}
+/* the total runs up from zero, then lands */
+function countUp(el, to) {
+  const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  el.classList.remove("done");
+  if (reduce || !to) { el.textContent = usd(to, 2); return; }
+  const t0 = performance.now(), dur = Math.min(1600, 700 + Math.log10(to + 1) * 300);
+  const step = (t) => {
+    const k = Math.min(1, (t - t0) / dur), e = 1 - Math.pow(1 - k, 3);
+    el.textContent = usd(to * e, 2);
+    if (k < 1) requestAnimationFrame(step); else { el.textContent = usd(to, 2); el.classList.add("done"); }
+  };
+  requestAnimationFrame(step);
 }
 
 function weekStart(d) {
@@ -460,7 +571,7 @@ function render(p, lists) {
   $("pUser").textContent = "@" + p.username;
   $("pLink").href = xoLink(`/profile/${encodeURIComponent(p.username)}`);
 
-  $("tFee").textContent = usd(total, 2);
+  countUp($("tFee"), total);
   $("tSub").textContent = n
     ? `on ${int(n)} trade${n === 1 ? "" : "s"} since ${fmtDate(first)}. ${int(noFee)} other trade${noFee === 1 ? "" : "s"} had no fee on record.`
     : `No fees on record for @${p.username}${noFee ? ` across ${int(noFee)} trades` : ""}.`;
@@ -475,10 +586,8 @@ function render(p, lists) {
       <div class="head"><span class="dot" style="background:${s.color}"></span>${s.name}</div>
       <div class="val num">${usd(s.fee, 2)}</div>
       <div class="meta num">${int(s.n)} trade${s.n === 1 ? "" : "s"} with a fee${s.vol ? ` · avg ${pct(s.fee / s.vol)}` : ""}</div>
-      <div class="share-bar" title="${total ? Math.round((s.fee / total) * 100) : 0}% of all fees"><i style="width:${total ? (s.fee / total) * 100 : 0}%;background:${s.color}"></i></div>
+      <div class="share-bar" title="${total ? Math.round((s.fee / total) * 100) : 0}% of all fees"><i style="width:0;background:${s.color}" data-w="${total ? (s.fee / total) * 100 : 0}%"></i></div>
     </section>`).join("");
-
-  drawWeeks(weeks);
 
   const top = [...markets.values()].sort((a, b) => b.fee - a.fee).slice(0, 8);
   $("top").querySelector("tbody").innerHTML = top.length ? top.map((m) => `
@@ -496,10 +605,18 @@ function render(p, lists) {
     : `I've paid $0 in trading fees on XO Market so far. How much have you paid?`;
   $("share").href = `https://x.com/intent/post?text=${encodeURIComponent(text + "\n\n" + page.href)}`;
 
-  $("res").hidden = false;
+  const res = $("res"), split = $("split");
+  [...res.children].forEach((c, i) => c.style.setProperty("--i", i));
+  [...split.children].forEach((c, i) => c.style.setProperty("--i", i));
+  res.classList.remove("in"); split.classList.remove("in");
+  res.hidden = false;
+  void res.offsetWidth;
+  res.classList.add("in"); split.classList.add("in");
+  drawWeeks(weeks);
+  requestAnimationFrame(() => requestAnimationFrame(() => split.querySelectorAll(".share-bar i").forEach((b) => { b.style.width = b.dataset.w; })));
 }
 
-function drawWeeks(weeks) {
+function drawWeeks(weeks, animate = true) {
   const box = $("chart");
   if (!weeks.size) { box.innerHTML = `<p class="muted">No fees yet.</p>`; return; }
   const keys = [...weeks.keys()].sort((a, b) => a - b);
@@ -510,7 +627,7 @@ function drawWeeks(weeks) {
   const step = niceStep(maxV / 4), top = Math.ceil(maxV / step) * step || 1;
   const y = (v) => T + (H - T - B) * (1 - v / top);
   const slot = (W - L - R) / all.length, bw = Math.max(2, Math.min(36, slot - 2));
-  let s = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Fees paid per week">`;
+  let s = `<svg class="${animate ? "anim" : ""}" viewBox="0 0 ${W} ${H}" role="img" aria-label="Fees paid per week">`;
   for (let v = 0; v <= top + 1e-9; v += step) {
     s += `<line class="${v ? "gl" : "base"}" x1="${L}" x2="${W - R}" y1="${y(v)}" y2="${y(v)}"/>`;
     s += `<text class="tick num" x="${L - 8}" y="${y(v) + 4}" text-anchor="end">${usd(v, step < 1 ? 2 : 0)}</text>`;
@@ -520,7 +637,7 @@ function drawWeeks(weeks) {
     const x = L + i * slot + (slot - bw) / 2, yy = y(v), h = Math.max(0, y(0) - yy), r = Math.min(4, bw / 2, h);
     const d = new Date(t), m = d.getUTCMonth();
     s += `<g data-i="${i}"><rect class="hit" x="${L + i * slot}" y="${T}" width="${slot}" height="${H - T - B}"/>`;
-    if (h > 0) s += `<path class="bar-r" d="M${x},${y(0)} V${yy + r} Q${x},${yy} ${x + r},${yy} H${x + bw - r} Q${x + bw},${yy} ${x + bw},${yy + r} V${y(0)} Z"/>`;
+    if (h > 0) s += `<path class="bar-r" style="animation-delay:${450 + i * 35}ms" d="M${x},${y(0)} V${yy + r} Q${x},${yy} ${x + r},${yy} H${x + bw - r} Q${x + bw},${yy} ${x + bw},${yy + r} V${y(0)} Z"/>`;
     s += `</g>`;
     if (m !== lastMonth && x - lastX > 34) {
       s += `<text class="tick" x="${x}" y="${H - 8}">${d.toLocaleDateString("en-US", { month: "short", timeZone: "UTC" })}</text>`;
@@ -552,10 +669,10 @@ function niceStep(raw) {
 
 let lastW = 0, lastWeeks = null;
 const origDraw = drawWeeks;
-drawWeeks = (w) => { lastWeeks = w; origDraw(w); };
+drawWeeks = (w) => { lastWeeks = w; lastW = $("chart").clientWidth; origDraw(w); };
 addEventListener("resize", () => {
   const w = $("chart").clientWidth;
-  if (lastWeeks && Math.abs(w - lastW) > 20) { lastW = w; origDraw(lastWeeks); }
+  if (lastWeeks && Math.abs(w - lastW) > 20) { lastW = w; origDraw(lastWeeks, false); }
 });
 
 const start = new URLSearchParams(location.search).get("u");
