@@ -252,7 +252,7 @@
   .fc-stats .fc-tile { padding: 16px 18px; }
   .fc-stats .fc-v { font-size: 36px; margin-top: 8px; }
   .fc-body .fc-big { font-size: 128px; margin: 8px 0 10px; }
-  .fc-body .fc-roast { max-width: 30ch; font-size: 22px; }
+  .fc-body .fc-roast { max-width: none; font-size: 22px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   /* the slip sits right on the card; a hairline + soft shadow (drawn around the torn edge too) keeps it apart from a white card */
   .fc-side { display: grid; min-height: 0; filter: drop-shadow(0 0 1px rgba(0,0,0,.28)) drop-shadow(0 12px 22px rgba(0,0,0,.16)); }
   .rcpt { width: 100%; height: 100%; min-height: 0; overflow: hidden; background: #fff; color: #17181c; padding: 22px 26px 30px; 
@@ -740,13 +740,13 @@ const mascotData = () => (MASCOT_DATA ??= toDataURL("mascot/accountant.webp"));
 
 // a friendly one-liner for the card, by how much went to fees
 function roast(total, n) {
-  if (!n) return "Not a cent in fees on record. A patient maker, or the first trade is still ahead.";
+  if (!n) return "Not a single cent in fees on record yet.";
   if (total < 1) return "Less than a dollar. The fee collector barely noticed.";
-  if (total < 10) return "Pocket change, a coffee's worth, paid one trade at a time.";
+  if (total < 10) return "Pocket change, about a coffee's worth.";
   if (total < 100) return "A nice dinner, paid to the order book.";
   if (total < 1000) return "A new phone's worth, one tiny fee at a time.";
-  if (total < 5000) return "Four figures in fees. XO should name a market after you.";
-  return "Serious volume, serious receipts. The accountant needs a bigger desk.";
+  if (total < 5000) return "Four figures in fees. That's VIP territory.";
+  return "Serious volume, serious receipts.";
 }
 
 function weeksSVG(weeks) {
@@ -819,7 +819,7 @@ async function render(p, lists) {
       <div class="fc-cats">
         ${per.map((s, i) => { const sh = total ? s.fee / total : 0; return `<div class="fc-cat rv" style="--d:${(0.4 + i * 0.07).toFixed(2)}s">
           <div class="cl"><i style="background:${s.color}"></i>${s.name}</div><div class="cv">${usd(s.fee, 2)}</div>
-          <div class="cs">${int(s.n)} trade${s.n === 1 ? "" : "s"} · ${Math.round(sh * 100)}% of fees</div>
+          <div class="cs">${int(s.n)} trade${s.n === 1 ? "" : "s"} · ${Math.round(sh * 100)}% of your total</div>
           <div class="cb"><b style="width:${(sh * 100).toFixed(1)}%;background:${s.color}"></b></div>
         </div>`; }).join("")}
         <div class="fc-cat rv" style="--d:.61s">
@@ -830,6 +830,8 @@ async function render(p, lists) {
     </div>
   </div>`;
   fitStage();
+  const line = $("card").querySelector(".fc-roast");
+  for (let fs = 22; fs > 15 && line.scrollWidth > line.clientWidth; fs--) line.style.fontSize = fs + "px";
   countUp($("cardBig"), total);
 
   current = p.username;
