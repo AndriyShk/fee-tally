@@ -835,12 +835,14 @@ async function render(p, lists) {
       if (fee > max) max = fee;
       if (!first || d < first) first = d;
       const w = weekStart(d); weeks.set(w, (weeks.get(w) || 0) + fee);
-      const mk = sc.key === "pulse" ? "pulse" : a.slug || a.marketTitle;
-      const m = markets.get(mk) || { title: sc.key === "pulse" ? "BTC 5min Pulse" : a.marketTitle, pic: sc.key === "pulse" ? null : a.picture, pulse: sc.key === "pulse", fee: 0 };
-      m.fee += fee; m.n = (m.n || 0) + 1; markets.set(mk, m);
+      // one entry per market; every 5-minute Pulse round is its own market, named by when it ran
+      const mk = a.marketId ?? a.slug ?? a.marketTitle;
+      const m = markets.get(mk) || { title: a.marketTitle, pic: sc.key === "pulse" ? null : a.picture, pulse: sc.key === "pulse", fee: 0, n: 0, first: d };
+      m.fee += fee; m.n++; if (d < m.first) m.first = d; markets.set(mk, m);
     }
   });
   const top = [...markets.values()].sort((a, b) => b.fee - a.fee)[0];
+  if (top && top.pulse) top.title = `BTC 5min Pulse · ${top.first.toLocaleString("en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", timeZone: "UTC" })} UTC`;
   const [ava, topPic] = await Promise.all([
     p.profilePictureUrl ? toDataURL(p.profilePictureUrl.replace("_normal.", "_bigger.")).then((d) => d || toDataURL(p.profilePictureUrl)) : "",
     top && top.pic && !top.pic.includes("placeholder") ? toDataURL(top.pic).then((d) => d || toDataURL("/api/img?u=" + encodeURIComponent(top.pic))) : "",
