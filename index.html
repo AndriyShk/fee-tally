@@ -90,11 +90,21 @@
   .hero { margin-top: 20px; padding: 28px; display: grid; grid-template-columns: minmax(0,1fr) 300px; gap: 24px; align-items: center; overflow: hidden; }
   .hero-main { display: grid; gap: 18px; min-width: 0; }
   .hero-art { align-self: stretch; display: grid; place-items: center; }
-  .mascot { width: 300px; height: auto; display: block; transform-origin: 50% 95%; animation: sway 4.2s ease-in-out infinite; }
+  .mascot { width: 300px; height: auto; aspect-ratio: 1; display: block; overflow: visible; transform-origin: 50% 95%; animation: sway 4.2s ease-in-out infinite; }
+  /* the pencil hand: an idle tap now and then, fast scribbling while the scan runs */
+  .mascot .hand { transform-box: view-box; transform-origin: 772px 442px; animation: tap 3.2s ease-in-out infinite; }
+  @keyframes tap { 0%, 70%, 100% { transform: none; } 76% { transform: rotate(-6deg); } 82% { transform: rotate(2deg); } 88% { transform: rotate(-4deg); } 94% { transform: none; } }
+  :root[data-loading] .mascot .hand { animation: scribble .34s ease-in-out infinite alternate; }
+  @keyframes scribble { 0% { transform: rotate(-8deg) translate(-3px, 2px); } 50% { transform: rotate(1deg) translate(3px, -2px); } 100% { transform: rotate(-4deg) translate(-1px, 4px); } }
+  .mascot .ribbon { fill: #fff; }
+  .mascot .edge { fill: none; stroke: #111; stroke-width: 7; stroke-linejoin: round; stroke-linecap: round; }
+  .mascot .ink { stroke: #6f6f6f; stroke-width: 6; stroke-linecap: round; fill: none; }
+  .mascot .fold { fill: #fff; stroke: #111; stroke-width: 7; stroke-linejoin: round; transform-box: fill-box; transform-origin: 50% 100%; animation: fold .35s cubic-bezier(.2,1.6,.4,1) both; }
+  @keyframes fold { from { transform: scale(.6, .2); opacity: 0; } to { transform: none; opacity: 1; } }
   /* at rest the rooster sways a little; while trades are read it trembles; when the total lands it hops */
   @keyframes sway { 0%, 100% { transform: rotate(-2deg); } 50% { transform: rotate(2deg) translateY(-4px); } }
-  :root[data-loading] .mascot { animation: tremble .18s linear infinite; }
-  @keyframes tremble { 0%, 100% { transform: translate(0, 0) rotate(0); } 25% { transform: translate(-1.5px, .5px) rotate(-.8deg); } 75% { transform: translate(1.5px, -.5px) rotate(.8deg); } }
+  :root[data-loading] .mascot { animation: bob .9s ease-in-out infinite; }
+  @keyframes bob { 0%, 100% { transform: none; } 50% { transform: translateY(-3px) rotate(-.6deg); } }
   .mascot.hop { animation: hop .7s cubic-bezier(.3,1.6,.5,1), sway 4.2s ease-in-out .7s infinite; }
   @keyframes hop { 0% { transform: none; } 35% { transform: translateY(-18px) rotate(-4deg); } 70% { transform: translateY(0) scale(1.03, .97); } 100% { transform: none; } }
   @media (max-width: 860px) { .hero { grid-template-columns: minmax(0,1fr) 220px; } .mascot { width: 220px; } }
@@ -300,7 +310,19 @@
     </div>
     <p class="status" id="status" role="status" aria-live="polite"></p>
     </div>
-    <div class="hero-art" aria-hidden="true"><img class="mascot" src="mascot/receipt.webp" alt="" width="640" height="640"></div>
+    <div class="hero-art" aria-hidden="true">
+      <!-- the accountant: the base picture minus his pencil hand, the receipt tape drawn on top (it grows with the scan), then the hand on its own so it can write -->
+      <svg class="mascot" viewBox="0 0 1024 1024">
+        <defs>
+          <clipPath id="noHand"><path clip-rule="evenodd" d="M0 0H1024V1024H0Z M685 222 L872 222 L872 432 L792 442 L752 442 L752 379 L712 376 L685 300 Z"/></clipPath>
+          <clipPath id="handOnly"><path d="M682 219 L875 219 L875 435 L793 445 L749 445 L749 382 L712 379 L682 300 Z"/></clipPath>
+        </defs>
+        <image href="mascot/accountant.webp" width="1024" height="1024" clip-path="url(#noHand)"/>
+        <g id="pile"></g>
+        <g id="tape"></g>
+        <g class="hand"><image href="mascot/accountant.webp" width="1024" height="1024" clip-path="url(#handOnly)"/></g>
+      </svg>
+    </div>
   </section>
 
   <div class="res" id="res" hidden>
@@ -454,10 +476,11 @@ async function limited(fn) {
   if (slots > 0) slots--; else await new Promise((r) => waiting.push(r));
   try { return await fn(); } finally { const next = waiting.shift(); if (next) next(); else slots++; }
 }
-async function allActivities(user, scope, onPage) {
+async function allActivities(user, scope, onPage, onMeta = () => {}) {
   const path = (page) => `/profiles/${encodeURIComponent(user)}/activities?take=100&page=${page}${scope.q ? "&marketScope=" + scope.q : ""}`;
   const first = await limited(() => api(path(1)));
   const pages = [first.data || []];
+  onMeta(first.meta?.itemCount ?? pages[0].length);
   onPage(pages[0].length);
   const count = Math.min(first.meta?.pageCount || 1, 1000);
   await Promise.all(Array.from({ length: count - 1 }, (_, i) => limited(async () => {
@@ -488,6 +511,7 @@ async function run(raw) {
   const id = ++runId;
   $("res").hidden = true; $("go").disabled = true;
   startLoading(name);
+  tape.reset();
   try {
     let p;
     try { p = await api(`/profiles/${encodeURIComponent(name)}`); }
@@ -501,12 +525,15 @@ async function run(raw) {
 
     $("ldTitle").textContent = `Reading @${p.username}'s trades`;
     let rows = 0;
-    const tick = (n) => { rows += n; if (id === runId) setCount(rows); };
-    const lists = await Promise.all(SCOPES.map((s) => allActivities(p.username, s, tick).then((list) => {
+    const expect = {};
+    const tick = (n) => { rows += n; if (id === runId) { setCount(rows); tape.progress(rows, Object.values(expect).reduce((a, b) => a + b, 0)); } };
+    const meta = (key) => (n) => { expect[key] = n; };
+    const lists = await Promise.all(SCOPES.map((s) => allActivities(p.username, s, tick, meta(s.key)).then((list) => {
       if (id === runId) $("ldSteps").querySelector(`[data-k="${s.key}"]`).classList.add("done");
       return list;
     })));
     if (id !== runId) return;
+    tape.progress(rows, Math.max(rows, 1));
     stopLoading();
     render(p, lists);
     const m = document.querySelector(".mascot");
@@ -519,6 +546,93 @@ async function run(raw) {
     if (id === runId) { stopLoading(); $("go").disabled = false; }
   }
 }
+
+/* the accountant's receipt: it hangs from the sheet in his hand, grows while trades are read
+   and, once it reaches the floor, piles up in folds. How long it gets depends on how many rows
+   the trader has (log scale): a handful of trades is a short slip, tens of thousands a heap. */
+const tape = (() => {
+  const NS = "http://www.w3.org/2000/svg";
+  const g = document.getElementById("tape"), pileG = document.getElementById("pile");
+  // the sheet's bottom edge in the picture (1024 px space) and the curve the tape follows down to the floor
+  const L = [612, 655], R = [756, 632], W = Math.hypot(R[0] - L[0], R[1] - L[1]);
+  const P0 = [(L[0] + R[0]) / 2, (L[1] + R[1]) / 2], P1 = [700, 850], P2 = [850, 830], P3 = [884, 962];
+  const bez = (t) => {
+    const u = 1 - t;
+    return [0, 1].map((k) => u * u * u * P0[k] + 3 * u * u * t * P1[k] + 3 * u * t * t * P2[k] + t * t * t * P3[k]);
+  };
+  // sample the curve by arc length
+  const pts = [], STEP = 4;
+  { let prev = bez(0), acc = 0; pts.push({ p: prev, s: 0 });
+    for (let i = 1; i <= 2000; i++) { const q = bez(i / 2000); acc += Math.hypot(q[0] - prev[0], q[1] - prev[1]); prev = q; if (acc - pts[pts.length - 1].s >= STEP || i === 2000) pts.push({ p: q, s: acc }); } }
+  const H = pts[pts.length - 1].s;
+  pts.forEach((o, i) => {
+    const a = pts[Math.max(0, i - 1)].p, b = pts[Math.min(pts.length - 1, i + 1)].p;
+    const tx = b[0] - a[0], ty = b[1] - a[1], m = Math.hypot(tx, ty) || 1;
+    o.t = [tx / m, ty / m]; o.n = [ty / m, -tx / m]; // n points to the viewer's right side of the tape
+  });
+  // at the very top the tape must line up with the sheet's edge
+  const e = [(R[0] - L[0]) / W, (R[1] - L[1]) / W];
+  pts.forEach((o) => { const k = Math.max(0, 1 - o.s / 60); if (k > 0) { const nx = o.n[0] * (1 - k) + e[0] * k, ny = o.n[1] * (1 - k) + e[1] * k, m = Math.hypot(nx, ny); o.n = [nx / m, ny / m]; } });
+  const FOLD = 120, MAXF = 9, U0 = 34, UMAX = H + FOLD * MAXF;
+  let seed = 7; const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+  const inkLen = Array.from({ length: 80 }, () => [0.55 + rnd() * 0.3, rnd() * 0.12]);
+  const at = (s) => { const i = Math.min(pts.length - 1, Math.round(s / STEP)); return pts[i]; };
+  const off = (o, d, tt = 0) => [o.p[0] + o.n[0] * d + o.t[0] * tt, o.p[1] + o.n[1] * d + o.t[1] * tt];
+  const f1 = (v) => v.toFixed(1);
+  const pathOf = (arr) => "M" + arr.map((q) => f1(q[0]) + " " + f1(q[1])).join("L");
+  let cur = U0, target = U0, folds = 0, raf = 0, last = 0;
+  function draw(u) {
+    const len = Math.min(u, H), list = pts.filter((o) => o.s <= len);
+    if (list.length < 2) list.push(at(len));
+    const end = list[list.length - 1], left = list.map((o) => off(o, -W / 2)), right = list.map((o) => off(o, W / 2));
+    // start a little above the sheet's bottom edge so sheet and tape read as one strip of paper
+    left.unshift(off(pts[0], -W / 2 + 3, -10)); right.unshift(off(pts[0], W / 2 - 3, -10));
+    // a torn end while it is still hanging, a clean one once it lies in the pile
+    const tear = [];
+    if (len < H) for (let i = 0; i <= 8; i++) tear.push(off(end, W / 2 - (W * i) / 8, i % 2 ? 9 : 0));
+    else tear.push(off(end, W / 2), off(end, -W / 2));
+    let ink = "";
+    for (let s = 16, k = 0; s < len - 10; s += 26, k++) {
+      const o = at(s), [l, sh] = inkLen[k % inkLen.length], half = W / 2 - 18;
+      const a = off(o, -half + sh * W), b = off(o, -half + sh * W + l * (W - 36) * (1 - sh));
+      ink += `M${f1(a[0])} ${f1(a[1])}L${f1(b[0])} ${f1(b[1])}`;
+    }
+    g.innerHTML =
+      `<path class="ribbon" d="${pathOf([...left, ...(len < H ? tear.slice().reverse() : [off(end, -W / 2), off(end, W / 2)]), ...right.slice().reverse()])}Z"/>` +
+      (ink ? `<path class="ink" d="${ink}"/>` : "") +
+      `<path class="edge" d="${pathOf(left)}"/><path class="edge" d="${pathOf(right)}"/>` +
+      (len < H ? `<path class="edge" d="${pathOf(tear.slice().reverse())}"/>` : "");
+    // folds on the floor, one per FOLD of extra length
+    const want = u > H ? Math.min(MAXF, Math.floor((u - H) / FOLD) + 1) : 0;
+    while (folds < want) {
+      const i = folds++, y = 992 - i * 30, x = 884 + (i % 2 ? 9 : -9), w = 196, h = 40;
+      const el = document.createElementNS(NS, "g");
+      el.innerHTML = `<rect class="fold" x="${x - w / 2}" y="${y - h}" width="${w}" height="${h}" rx="18"/>` +
+        `<path class="ink" d="M${x - 62} ${y - 20}H${x + 30 - (i % 3) * 14}"/>`;
+      pileG.appendChild(el);
+    }
+    while (folds > want) { pileG.lastChild?.remove(); folds--; }
+  }
+  function loop(t) {
+    const dt = last ? Math.min(0.05, (t - last) / 1000) : 0.016; last = t;
+    cur += (target - cur) * Math.min(1, dt * 3.2);
+    if (Math.abs(target - cur) < 0.5) cur = target;
+    draw(cur);
+    raf = cur === target ? 0 : requestAnimationFrame(loop);
+  }
+  const go = () => { if (!raf) { last = 0; raf = requestAnimationFrame(loop); } };
+  const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  draw(cur);
+  return {
+    reset() { target = U0; if (reduce) { cur = U0; draw(cur); } else go(); },
+    progress(read, expected) {
+      if (!expected) return;
+      const scale = Math.min(1, Math.max(0.18, Math.log10(expected + 1) / 4.8));
+      target = U0 + (UMAX - U0) * scale * Math.min(1, read / expected);
+      if (reduce) { cur = target; draw(cur); } else go();
+    },
+  };
+})();
 
 /* loading panel */
 function startLoading(name) {
