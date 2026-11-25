@@ -808,6 +808,21 @@ function roast(total, n) {
   return "Five figures in fees. Serious volume, serious receipts.";
 }
 
+// the X post: first person, casual, real numbers, and enough about XO to make people curious (kept under X's 280)
+function postText(total, n, vol, max, per) {
+  if (!n) return "checked my trading fees on @xomarket so far.\n\n$0. not a single cent 👀\n\nhow much are you paying? 👇";
+  const hook = total >= 10000 ? "five figures in trading fees on @xomarket 👀"
+    : total >= 1000 ? "four figures in trading fees on @xomarket 👀"
+    : total >= 100 ? "did not expect this number from @xomarket fees 👀"
+    : "checked what i've paid in fees on @xomarket 🧾";
+  const lead = [...per].sort((a, b) => b.fee - a.fee)[0];
+  const where = { pulse: "pulse, xo's 5-min btc up/down rounds", conv: "convictions", markets: "regular prediction markets" }[lead.key];
+  const share = Math.round((lead.fee / total) * 100);
+  return `${hook}\n\n${usd(total, 2)} across ${int(n)} trades. avg fee ${pct(total / vol)}, biggest one ${usd(max)}.\n\n`
+    + (share >= 99 ? `all of it on ${where}.` : `${share}% of it on ${where}.`)
+    + `\n\nhow much are you paying? 👇`;
+}
+
 function weeksSVG(weeks) {
   if (!weeks.size) return "";
   const keys = [...weeks.keys()].sort((a, b) => a - b), all = [];
@@ -903,9 +918,7 @@ async function render(p, lists) {
 
   current = p.username;
   const share = location.origin; // the plain site link, no ?u= (everyone counts their own)
-  const text = n
-    ? `I've paid ${usd(total, 2)} in trading fees on @xomarket 🧾\n\n${int(n)} trades · ${pct(total / vol)} avg fee · biggest single fee ${usd(max)}\n\nHow much have you paid?`
-    : `I've paid $0 in trading fees on @xomarket so far 🧾\n\nHow much have you paid?`;
+  const text = postText(total, n, vol, max, per);
   $("tweet").href = `https://x.com/intent/post?text=${encodeURIComponent(`${text}\n\n${share}\n\n${TWEET_TAGS}`)}`;
   $("pLink").href = xoLink(`/profile/${encodeURIComponent(p.username)}`);
   $("res").hidden = false;
