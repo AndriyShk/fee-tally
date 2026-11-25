@@ -1,10 +1,13 @@
-// Market pictures live on storage.googleapis.com without CORS headers, so the card's PNG export
-// can't inline them directly. This passes through only XO's market-image bucket, cached.
-const ALLOWED = "https://storage.googleapis.com/market-image-mainnet/";
+// XO's market pictures live in two buckets without CORS headers, so the card's PNG export
+// can't inline them directly. This passes through only those buckets, cached.
+const ALLOWED = [
+  "https://storage.googleapis.com/market-image-mainnet/",
+  "https://market-images-623756711122.s3.eu-west-1.amazonaws.com/",
+];
 
 export default async function handler(req, res) {
   const u = String(req.query.u || "");
-  if (!u.startsWith(ALLOWED) || u.includes("..")) return res.status(400).end();
+  if (!ALLOWED.some((a) => u.startsWith(a)) || u.includes("..")) return res.status(400).end();
   try {
     const r = await fetch(u, { signal: AbortSignal.timeout(8000) });
     const type = r.headers.get("content-type") || "";
