@@ -795,14 +795,17 @@ let MASCOT_DATA = null;
 const mascotData = () => (MASCOT_DATA ??= toDataURL("mascot/accountant.webp"));
 
 // a friendly one-liner for the card, by how much went to fees
+// the line under the total: what that much money roughly buys (each band is the honest range for its comparison)
 function roast(total, n) {
   if (!n) return "Not a single cent in fees on record yet.";
   if (total < 1) return "Less than a dollar. The fee collector barely noticed.";
-  if (total < 10) return "Pocket change, about a coffee's worth.";
+  if (total < 5) return "About a coffee's worth, one trade at a time.";
+  if (total < 25) return "About a lunch's worth, paid to the order book.";
   if (total < 100) return "A nice dinner, paid to the order book.";
+  if (total < 300) return "A pair of sneakers, one tiny fee at a time.";
   if (total < 1000) return "A new phone's worth, one tiny fee at a time.";
-  if (total < 5000) return "Four figures in fees. That's VIP territory.";
-  return "Serious volume, serious receipts.";
+  if (total < 10000) return "Four figures in fees. That's VIP territory.";
+  return "Five figures in fees. Serious volume, serious receipts.";
 }
 
 function weeksSVG(weeks) {
