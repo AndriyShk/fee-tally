@@ -865,7 +865,8 @@ async function render(p, lists) {
   });
   const top = [...markets.values()].sort((a, b) => b.fee - a.fee)[0];
   if (top && top.pulse) top.title = `BTC 5min Pulse · ${top.first.toLocaleString("en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", timeZone: "UTC" })} UTC`;
-  const marketPic = (m) => (m && m.pic && !m.pic.includes("placeholder") ? toDataURL(m.pic).then((d) => d || toDataURL("/api/img?u=" + encodeURIComponent(m.pic))) : "");
+  // market pictures never allow cross-origin reads, so they always go through the site's own proxy
+  const marketPic = (m) => (m && m.pic && !m.pic.includes("placeholder") ? toDataURL("/api/img?u=" + encodeURIComponent(m.pic)) : "");
   const samePic = maxAt && top && maxAt.pic && maxAt.pic === top.pic;
   const [ava, topPic, maxPic0] = await Promise.all([
     p.profilePictureUrl ? toDataURL(p.profilePictureUrl.replace("_normal.", "_bigger.")).then((d) => d || toDataURL(p.profilePictureUrl)) : "",
@@ -883,7 +884,7 @@ async function render(p, lists) {
   $("stage").innerHTML = `<div class="fcard" id="card">
     <div class="fc-head">
       <div class="fc-brand">${logo}<div><span>Fee Tally</span><small>get yours → <b>${esc(host)}</b></small></div></div>
-      <div class="fc-who"><div><b>@${esc(p.username)}</b><small>Trading fees on XO Market</small></div>${ava ? `<img class="fc-ava" src="${ava}" alt="">` : `<span class="fc-ava">${esc((p.username[0] || "?").toUpperCase())}</span>`}</div>
+      <div class="fc-who"><div><b>@${esc(p.username)}</b><small>Trading fees on XO Market</small></div>${ava ? `<img class="fc-ava" src="${ava}" alt="">` : `<span class="fc-ava">${esc(((p.username.match(/[a-z0-9]/i) || ["?"])[0]).toUpperCase())}</span>`}</div>
     </div>
     <div class="fc-main">
       <div class="fc-body">
