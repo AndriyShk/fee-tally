@@ -1,8 +1,9 @@
-// XO's market pictures live in two buckets without CORS headers, so the card's PNG export
-// can't inline them directly. This passes through only those buckets, cached.
+// XO's market pictures come from three places without CORS headers (its two buckets and football
+// crests), so the card's PNG export can't inline them directly. Only these hosts pass, cached.
 const ALLOWED = [
   "https://storage.googleapis.com/market-image-mainnet/",
   "https://market-images-623756711122.s3.eu-west-1.amazonaws.com/",
+  "https://crests.football-data.org/",
 ];
 
 export default async function handler(req, res) {
